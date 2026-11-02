@@ -9,7 +9,7 @@ export function smsConfigured() {
 }
 
 /** `to` in E.164 (+233…). Never logs the message body (it may contain a login code). */
-export async function sendSms(to: string, message: string): Promise<SmsResult> {
+export async function sendSms(to: string, message: string, timeoutMs = 10_000): Promise<SmsResult> {
   const provider = process.env.SMS_PROVIDER ?? "arkesel";
   const sender = process.env.SMS_SENDER_ID ?? "Elsasu";
   const msisdn = to.replace(/^\+/, "");
@@ -22,7 +22,7 @@ export async function sendSms(to: string, message: string): Promise<SmsResult> {
       url.searchParams.set("from", sender);
       url.searchParams.set("to", msisdn);
       url.searchParams.set("content", message);
-      const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
       return res.ok ? { ok: true, provider } : { ok: false, error: `Hubtel ${res.status}` };
     }
 
@@ -31,7 +31,7 @@ export async function sendSms(to: string, message: string): Promise<SmsResult> {
       // Trimmed: keys pasted into Vercel often carry a stray space or line break, which Arkesel rejects (401).
       headers: { "Content-Type": "application/json", "api-key": (process.env.ARKESEL_API_KEY ?? "").trim().replace(/^"|"$/g, "") },
       body: JSON.stringify({ sender, message, recipients: [msisdn] }),
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     const data = (await res.json().catch(() => ({}))) as { status?: string; message?: string };
     return res.ok && data.status === "success" ? { ok: true, provider } : { ok: false, error: `Arkesel ${res.status} ${data.message ?? ""}`.trim() };

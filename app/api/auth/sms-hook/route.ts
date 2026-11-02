@@ -1,5 +1,10 @@
+import { after } from "next/server";
 import { sendSms, smsConfigured } from "@/lib/notifications/sms";
 import { verifyStandardWebhook } from "@/lib/webhooks/standard";
+import { reportError } from "@/lib/observability";
+
+// Room for background retries to Arkesel (see after() below).
+export const maxDuration = 60;
 
 // Supabase Auth "Send SMS" hook: Supabase calls this with the login code; we deliver it via Arkesel/Hubtel.
 // Configure in Supabase → Authentication → Hooks → Send SMS (HTTP) → this URL + the generated secret.
@@ -33,10 +38,18 @@ export async function POST(req: Request) {
     return Response.json({});
   }
 
-  const result = await sendSms(to, message);
-  if (!result.ok) {
-    console.error(`[sms-hook] send failed (${to.slice(0, 7)}…): ${result.error}`);
-    return fail(502, "Could not send the code. Please try again.");
-  }
+  // Supabase gives this hook ~5 seconds, and Arkesel sometimes takes far longer to answer. So reply at
+  // once and deliver in the background, retrying slow/failed attempts. A retry can only re-send the
+  // same code. If every attempt fails, the customer taps "Resend code".
+  after(async () => {
+    let last = "";
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const result = await sendSms(to, message, 12_000);
+      if (result.ok) return;
+      last = result.error;
+      if (/\b(401|402|403|422)\b|invalid key|balance|sender/i.test(last)) break; // retrying won't help
+    }
+    reportError("sms-hook", new Error(`send failed (${to.slice(0, 7)}…): ${last}`));
+  });
   return Response.json({});
 }
