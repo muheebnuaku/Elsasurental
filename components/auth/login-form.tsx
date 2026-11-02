@@ -225,9 +225,11 @@ export function LoginForm() {
                 <span
                   key={i}
                   className={cn(
-                    "grid h-14 place-items-center rounded-xl border bg-background font-mono text-2xl font-semibold tabular-nums transition-colors",
-                    i === Math.min(code.length, 5) && "peer-focus:border-brand-orange peer-focus:ring-3 peer-focus:ring-brand-orange/25",
-                    error && "border-destructive/60",
+                    "grid h-14 place-items-center rounded-xl border-2 bg-background font-mono text-2xl font-semibold tabular-nums transition-all duration-150",
+                    // Filled boxes light up orange; the next empty one shows where you're typing.
+                    code[i] ? "scale-[1.03] border-brand-orange bg-brand-orange/10 text-foreground" : "border-input",
+                    !code[i] && i === code.length && "peer-focus:border-brand-orange/60 peer-focus:ring-3 peer-focus:ring-brand-orange/20",
+                    error && "border-destructive/60 bg-destructive/5",
                   )}
                 >
                   {code[i] ?? ""}
