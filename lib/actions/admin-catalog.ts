@@ -26,11 +26,57 @@ const urls = (v: FormDataEntryValue | null) => {
   }
 };
 
-// ── Vans ──────────────────────────────────────────────────────────────
+// ── Vehicle types (what the website sells: "8-Seater Minivan", "7-Seater SUV"…) ──
+const typeSchema = z.object({
+  id: z.guid().or(z.literal("")),
+  name: z.string().trim().min(2, "Give the vehicle type a name.").max(60),
+  category: z.enum(["van", "suv"]),
+  seats: z.coerce.number().int().min(1, "Seats must be at least 1.").max(60),
+  luggage_capacity: z.coerce.number().int().min(0).max(60),
+  description: z.string().trim().max(400),
+  sort_order: z.coerce.number().int().min(0).max(999),
+  active: z.union([z.literal("on"), z.literal("")]).optional(),
+  copy_from: z.guid().or(z.literal("")).optional(),
+});
+
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+
+export async function saveVehicleType(_prev: AdminResult | null, formData: FormData): Promise<AdminResult> {
+  const { supabase } = await requireAdmin();
+  const parsed = typeSchema.safeParse({ ...Object.fromEntries(formData), active: formData.get("active") ?? "" });
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the vehicle type.");
+  const { id, active, copy_from, description, ...t } = parsed.data;
+  const row = { ...t, description: description || null, active: active === "on" };
+
+  if (id) {
+    const { error } = await supabase.from("vehicle_types").update(row).eq("id", id);
+    return error ? fail("Couldn't save the vehicle type.") : done("Vehicle type saved. The website shows it now.");
+  }
+
+  const { data: created, error } = await supabase
+    .from("vehicle_types")
+    .insert({ ...row, slug: slugify(t.name) || `type-${Date.now()}` })
+    .select("id")
+    .single();
+  if (error || !created) return fail(error?.code === "23505" ? "A vehicle type with that name already exists." : "Couldn't add the vehicle type.");
+
+  // Start its prices from a similar type so it can be quoted straight away; adjust them on its page.
+  if (copy_from) {
+    const [{ data: rules }, { data: dests }] = await Promise.all([
+      supabase.from("pricing_rules").select("trip_type, base_price, included_km, included_hours, extra_km_rate, extra_hour_rate, night_surcharge_pct").eq("vehicle_type_id", copy_from).eq("active", true),
+      supabase.from("destination_prices").select("destination_id, price").eq("vehicle_type_id", copy_from),
+    ]);
+    if (rules?.length) await supabase.from("pricing_rules").insert(rules.map((r) => ({ ...r, vehicle_type_id: created.id })));
+    if (dests?.length) await supabase.from("destination_prices").insert(dests.map((d) => ({ ...d, vehicle_type_id: created.id })));
+  }
+  return { ...done("Vehicle type added. Check its prices, then add its vehicles."), id: created.id };
+}
+
+// ── Vehicles (individual vans/SUVs with plates) ───────────────────────
 const vehicleSchema = z.object({
   id: z.guid().or(z.literal("")),
-  type_id: z.guid("Choose a van type."),
-  name: z.string().trim().min(2, "Give the van a name.").max(60),
+  type_id: z.guid("Choose a vehicle type."),
+  name: z.string().trim().min(2, "Give the vehicle a name.").max(60),
   plate: z.string().trim().toUpperCase().min(4, "Enter the number plate.").max(20),
   status: z.enum(["available", "on_trip", "maintenance", "inactive"]),
   current_mileage: z.coerce.number().int().min(0).max(2_000_000),
@@ -41,7 +87,7 @@ const vehicleSchema = z.object({
 export async function saveVehicle(_prev: AdminResult | null, formData: FormData): Promise<AdminResult> {
   const { supabase } = await requireAdmin();
   const parsed = vehicleSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the van details.");
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the vehicle details.");
   const { id, year, ...v } = parsed.data;
   const row = {
     ...v,
@@ -52,8 +98,8 @@ export async function saveVehicle(_prev: AdminResult | null, formData: FormData)
     videos: urls(formData.get("videos")),
   };
   const { error } = id ? await supabase.from("vehicles").update(row).eq("id", id) : await supabase.from("vehicles").insert(row);
-  if (error) return fail(error.code === "23505" ? "Another van already has that number plate." : "Couldn't save the van.");
-  return done(id ? "Van updated." : "Van added.");
+  if (error) return fail(error.code === "23505" ? "Another vehicle already has that number plate." : "Couldn't save the vehicle.");
+  return done(id ? "Vehicle updated." : "Vehicle added.");
 }
 
 // ── Drivers ───────────────────────────────────────────────────────────
@@ -97,7 +143,7 @@ export async function saveDriver(_prev: AdminResult | null, formData: FormData):
   await db.from("profiles").update({ role: "driver", full_name: d.full_name }).eq("id", profileId);
   const { error } = await db.from("drivers").insert({ profile_id: profileId, licence_no: d.licence_no, licence_expiry: d.licence_expiry, is_active: active });
   if (error) return fail(error.code === "23505" ? "This person is already a driver." : "Couldn't add the driver.");
-  return done("Driver added. They can sign in with their phone number.");
+  return done("Driver added. They sign in at /login: first time, tap \"Forgot password?\" to set a password.");
 }
 
 // ── Pricing rules ─────────────────────────────────────────────────────
@@ -156,7 +202,7 @@ export async function saveDestination(_prev: AdminResult | null, formData: FormD
 
   const { id, active, distance_km, image_url, ...d } = parsed.data;
   const row = { ...d, distance_km: distance_km === "" ? null : distance_km, image_url: image_url || null, active: active === "on" };
-  const slug = d.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const slug = slugify(d.name);
   const saved = id
     ? await supabase.from("destinations").update(row).eq("id", id).select("id").single()
     : await supabase.from("destinations").insert({ ...row, slug }).select("id").single();
@@ -174,8 +220,10 @@ export async function saveDestination(_prev: AdminResult | null, formData: FormD
 
 // ── Add-ons ───────────────────────────────────────────────────────────
 const addonSchema = z.object({
-  id: z.guid(),
-  name: z.string().trim().min(2).max(60),
+  id: z.guid().or(z.literal("")),
+  name: z.string().trim().min(2, "Give the extra a name.").max(60),
+  description: z.string().trim().max(200).optional(),
+  unit: z.enum(["per_trip", "per_item", "per_day", "per_hour"]).optional(),
   price: money,
   active: z.union([z.literal("on"), z.literal("")]).optional(),
 });
@@ -183,10 +231,14 @@ const addonSchema = z.object({
 export async function saveAddon(_prev: AdminResult | null, formData: FormData): Promise<AdminResult> {
   const { supabase } = await requireAdmin();
   const parsed = addonSchema.safeParse({ ...Object.fromEntries(formData), active: formData.get("active") ?? "" });
-  if (!parsed.success) return fail("Check the add-on.");
-  const { id, active, ...a } = parsed.data;
-  const { error } = await supabase.from("addons").update({ ...a, active: active === "on" }).eq("id", id);
-  return error ? fail("Couldn't save the add-on.") : done("Add-on saved.");
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the extra.");
+  const { id, active, description, unit, ...a } = parsed.data;
+  if (id) {
+    const { error } = await supabase.from("addons").update({ ...a, ...(description !== undefined ? { description: description || null } : {}), active: active === "on" }).eq("id", id);
+    return error ? fail("Couldn't save the extra.") : done("Extra saved.");
+  }
+  const { error } = await supabase.from("addons").insert({ ...a, description: description || null, unit: unit ?? "per_trip", active: true, slug: slugify(a.name) });
+  return error ? fail(error.code === "23505" ? "An extra with that name already exists." : "Couldn't add the extra.") : done("Extra added.");
 }
 
 // ── Promo codes ───────────────────────────────────────────────────────
@@ -215,4 +267,35 @@ export async function togglePromo(id: string, active: boolean): Promise<AdminRes
   const { supabase } = await requireAdmin();
   const { error } = await supabase.from("promo_codes").update({ active }).eq("id", id);
   return error ? fail("Couldn't update the code.") : done(active ? "Code switched on." : "Code switched off.");
+}
+
+// ── One vehicle type's fixed destination prices ("dest:<destination_id>" fields; empty = not offered) ──
+export async function saveTypeDestinationPrices(_prev: AdminResult | null, formData: FormData): Promise<AdminResult> {
+  const { supabase } = await requireAdmin();
+  const typeId = z.guid().safeParse(formData.get("vehicle_type_id"));
+  if (!typeId.success) return fail("Something's not right. Refresh and try again.");
+
+  const upserts: { destination_id: string; vehicle_type_id: string; price: number }[] = [];
+  const cleared: string[] = [];
+  for (const [key, value] of formData) {
+    if (!key.startsWith("dest:")) continue;
+    const destId = z.guid().safeParse(key.slice(5));
+    if (!destId.success) return fail("Check the prices.");
+    if (String(value).trim() === "") {
+      cleared.push(destId.data);
+      continue;
+    }
+    const price = money.safeParse(value);
+    if (!price.success) return fail("Check the prices.");
+    upserts.push({ destination_id: destId.data, vehicle_type_id: typeId.data, price: price.data });
+  }
+
+  if (upserts.length) {
+    const { error } = await supabase.from("destination_prices").upsert(upserts);
+    if (error) return fail("Couldn't save the prices.");
+  }
+  if (cleared.length) {
+    await supabase.from("destination_prices").delete().eq("vehicle_type_id", typeId.data).in("destination_id", cleared);
+  }
+  return done("Destination prices saved.");
 }

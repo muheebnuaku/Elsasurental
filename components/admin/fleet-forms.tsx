@@ -35,7 +35,7 @@ function useUploader(bucket: "vehicle-photos" | "vehicle-videos") {
   return { busy, upload };
 }
 
-export function VehicleForm({ vehicle, types, onSaved }: { vehicle?: VehicleRow; types: VanTypeOpt[]; onSaved?: () => void }) {
+export function VehicleForm({ vehicle, types, defaultTypeId, onSaved }: { vehicle?: VehicleRow; types: VanTypeOpt[]; defaultTypeId?: string; onSaved?: () => void }) {
   const [photos, setPhotos] = useState<string[]>(vehicle?.photos ?? []);
   const [videos, setVideos] = useState<string[]>(vehicle?.videos ?? []);
   const photoUp = useUploader("vehicle-photos");
@@ -53,8 +53,8 @@ export function VehicleForm({ vehicle, types, onSaved }: { vehicle?: VehicleRow;
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <label className="text-xs font-medium text-muted-foreground">Name<input name="name" required defaultValue={vehicle?.name} className={`${fieldCls} mt-1`} /></label>
             <label className="text-xs font-medium text-muted-foreground">Plate<input name="plate" required defaultValue={vehicle?.plate} className={`${fieldCls} mt-1 uppercase`} /></label>
-            <label className="text-xs font-medium text-muted-foreground">Size
-              <select name="type_id" defaultValue={vehicle?.type_id ?? types[0]?.id} className={`${fieldCls} mt-1`}>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
+            <label className="text-xs font-medium text-muted-foreground">Vehicle type
+              <select name="type_id" defaultValue={vehicle?.type_id ?? defaultTypeId ?? types[0]?.id} className={`${fieldCls} mt-1`}>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
             </label>
             <label className="text-xs font-medium text-muted-foreground">Status
               <select name="status" defaultValue={vehicle?.status ?? "available"} className={`${fieldCls} mt-1`}>
@@ -64,7 +64,7 @@ export function VehicleForm({ vehicle, types, onSaved }: { vehicle?: VehicleRow;
             <label className="text-xs font-medium text-muted-foreground">Mileage (km)<input name="current_mileage" type="number" min={0} defaultValue={vehicle?.current_mileage ?? 0} className={`${fieldCls} mt-1`} /></label>
             <label className="text-xs font-medium text-muted-foreground">Year<input name="year" type="number" min={1990} max={2100} defaultValue={vehicle?.year ?? ""} className={`${fieldCls} mt-1`} /></label>
             <label className="text-xs font-medium text-muted-foreground">Colour<input name="colour" defaultValue={vehicle?.colour ?? ""} className={`${fieldCls} mt-1`} /></label>
-            <label className="col-span-2 text-xs font-medium text-muted-foreground">Features (comma separated)<input name="features" defaultValue={vehicle?.features.join(", ")} placeholder="Air conditioning, USB charging" className={`${fieldCls} mt-1`} /></label>
+            <label className="col-span-2 text-xs font-medium text-muted-foreground">Features (comma separated)<input name="features" defaultValue={vehicle?.features.join(", ")} placeholder="Air conditioning, Leather seats, USB charging" className={`${fieldCls} mt-1`} /></label>
           </div>
 
           <div>
@@ -97,7 +97,7 @@ export function VehicleForm({ vehicle, types, onSaved }: { vehicle?: VehicleRow;
               <input ref={videoInput} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={async (e) => { const u = await videoUp.upload(e.target.files); setVideos((v) => [...v, ...u]); e.target.value = ""; }} />
             </div>
           </div>
-          <SubmitButton pending={pending || photoUp.busy || videoUp.busy}>{vehicle ? "Save van" : "Add van"}</SubmitButton>
+          <SubmitButton pending={pending || photoUp.busy || videoUp.busy}>{vehicle ? "Save vehicle" : "Add vehicle"}</SubmitButton>
         </>
       )}
     </ActionForm>

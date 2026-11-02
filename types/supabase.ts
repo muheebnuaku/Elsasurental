@@ -37,6 +37,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"app_bootstrap": {
+                  Row: {
+                    "first_admin_claimed": boolean,"id": boolean
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "first_admin_claimed"?: boolean,"id"?: boolean
+                  }
+                  Update: {
+                    "first_admin_claimed"?: boolean,"id"?: boolean
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"booking_addons": {
                   Row: {
                     "addon_id": string,"booking_id": string,"created_at": string,"id": string,"qty": number,"unit_price": number,"updated_at": string
@@ -507,14 +521,14 @@ isOneToOne: true
                   ]
                 },"vehicle_types": {
                   Row: {
-                    "category": string,"created_at": string,"description": string | null,"id": string,"luggage_capacity": number,"name": string,"seats": number,"slug": string,"sort_order": number,"updated_at": string
+                    "active": boolean,"category": string,"created_at": string,"description": string | null,"id": string,"luggage_capacity": number,"name": string,"seats": number,"slug": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name": string,"seats": number,"slug": string,"sort_order"?: number,"updated_at"?: string
+                    "active"?: boolean,"category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name": string,"seats": number,"slug": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name"?: string,"seats"?: number,"slug"?: string,"sort_order"?: number,"updated_at"?: string
+                    "active"?: boolean,"category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name"?: string,"seats"?: number,"slug"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     

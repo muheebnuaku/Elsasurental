@@ -232,3 +232,16 @@ Important choices and why. Newest at the bottom of each section.
 - **First account on an empty database becomes admin, once** (`app_bootstrap.first_admin_claimed`, checked in
   `handle_new_user`). It never fires while other accounts exist, and never again after it's used, so a later
   "no admins left" moment can't hand admin to a stranger. Further admins are promoted in SQL or by an admin.
+
+## Admin rebuild (Nov 2026)
+
+- **Navigation:** laptop = dark sidebar grouped Operations / Fleet & prices / People / Settings; phone = slim top
+  bar, bottom tabs (Overview, Bookings, Calendar, Vehicles) and "More" for the rest. Admin has its own shell
+  (`components/admin/admin-shell.tsx`); account and driver areas keep `AppShell`.
+- **Vehicles = what the website sells.** Vehicle types are now created, edited and hidden in the admin
+  (`vehicle_types.active`; hidden types are filtered by RLS and `getFleet`). Each type's page holds its details,
+  its vehicles (plates, photos, videos), its trip prices and its destination prices. A new type copies prices
+  from a chosen type so it can be quoted immediately.
+- **Customers page** with search and admin access; can't change your own role or remove the last admin.
+- **Admin assistant** (`/admin/assistant`, OpenAI via `lib/ai/provider.ts`): read-only tools that query
+  through the admin's own session (RLS), so it can answer and draft messages but never change data.

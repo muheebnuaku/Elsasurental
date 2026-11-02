@@ -25,7 +25,7 @@ export async function getFleet(): Promise<FleetType[]> {
 
   const supabase = createPublicClient();
   const [types, vehicles, pricing] = await Promise.all([
-    supabase.from("vehicle_types").select("*").order("sort_order"),
+    supabase.from("vehicle_types").select("*").eq("active", true).order("sort_order"),
     supabase.from("vehicles").select("*").neq("status", "inactive").order("name"),
     supabase.from("pricing_rules").select("*").eq("active", true),
   ]);

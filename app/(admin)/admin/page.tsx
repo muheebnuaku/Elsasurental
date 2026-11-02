@@ -34,7 +34,7 @@ export default async function AdminPage() {
     { icon: CalendarClock, label: "Trips today", value: String(today.count ?? 0) },
     { icon: AlertCircle, label: "Need a driver", value: String(unassigned.count ?? 0), alert: (unassigned.count ?? 0) > 0 },
     { icon: Wallet, label: "Balances due", value: formatMoney(balance) },
-    { icon: Car, label: "Vans in service", value: String(vans.count ?? 0) },
+    { icon: Car, label: "Vehicles in service", value: String(vans.count ?? 0) },
     { icon: UserRoundCheck, label: "Active drivers", value: String(drivers.count ?? 0) },
   ];
 

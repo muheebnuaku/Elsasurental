@@ -78,7 +78,31 @@ export function AddonForm({ addon }: { addon: AddonRow }) {
   );
 }
 
-export type PromoRow = { id: string; code: string; type: string; value: number; used_count: number; max_uses: number | null; valid_to: string | null; active: boolean };
+export function NewAddonForm() {
+  return (
+    <ActionForm action={saveAddon} className="grid grid-cols-2 items-end gap-2 sm:grid-cols-[1.2fr_1.6fr_8rem_7rem_auto]">
+      {(pending) => (
+        <>
+          <input type="hidden" name="id" value="" />
+          <Cell label="Name"><input name="name" required placeholder="e.g. Wi-Fi hotspot" className={fieldCls} /></Cell>
+          <Cell label="Description"><input name="description" placeholder="Shown to customers" className={fieldCls} /></Cell>
+          <Cell label="Charged">
+            <select name="unit" defaultValue="per_trip" className={fieldCls}>
+              <option value="per_trip">per trip</option>
+              <option value="per_item">per item</option>
+              <option value="per_day">per day</option>
+              <option value="per_hour">per hour</option>
+            </select>
+          </Cell>
+          <Cell label="Price GH₵"><input name="price" type="number" step="0.01" min={0} required className={num} /></Cell>
+          <SubmitButton pending={pending} className="col-span-2 sm:col-span-1">Add extra</SubmitButton>
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+export type PromoRow ={ id: string; code: string; type: string; value: number; used_count: number; max_uses: number | null; valid_to: string | null; active: boolean };
 
 export function PromoList({ promos }: { promos: PromoRow[] }) {
   const [pending, start] = useTransition();

@@ -12,7 +12,7 @@ import { afterPaymentRecorded } from "@/lib/booking/events";
 import { notifySafe, type NotifyEvent } from "@/lib/notifications";
 import { normalizeGhanaPhone } from "@/lib/phone";
 
-export type AdminResult = { ok: boolean; message: string; ref?: string; url?: string };
+export type AdminResult = { ok: boolean; message: string; ref?: string; url?: string; id?: string };
 
 const fail = (message: string): AdminResult => ({ ok: false, message });
 const refresh = (ref?: string) => {
