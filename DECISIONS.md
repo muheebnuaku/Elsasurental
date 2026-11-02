@@ -229,3 +229,6 @@ Important choices and why. Newest at the bottom of each section.
   template (`sendWhatsAppCode`). Meta accepts messages to numbers that aren't on WhatsApp and fails later, so we
   can't fall back instantly; instead a resend within 15 minutes goes by SMS (`otp_deliveries` remembers the last
   channel). `NEXT_PUBLIC_WHATSAPP_CODES=on` switches the wording on screen.
+- **First account on an empty database becomes admin, once** (`app_bootstrap.first_admin_claimed`, checked in
+  `handle_new_user`). It never fires while other accounts exist, and never again after it's used, so a later
+  "no admins left" moment can't hand admin to a stranger. Further admins are promoted in SQL or by an admin.
