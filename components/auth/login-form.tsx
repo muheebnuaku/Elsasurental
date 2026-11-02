@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatGhanaPhone, normalizeGhanaPhone } from "@/lib/phone";
 import { roleHome, safeNext } from "@/lib/auth";
 import { identify } from "@/lib/analytics/client";
+import { cn } from "@/lib/utils";
 
 type Step = "phone" | "code" | "name";
 const RESEND_SECONDS = 30;
@@ -28,6 +29,17 @@ function useGoogleEnabled() {
       .catch(() => {});
   }, []);
   return enabled;
+}
+
+function GhanaFlag() {
+  return (
+    <svg viewBox="0 0 30 20" className="h-3.5 w-[21px] shrink-0 rounded-[3px] shadow-[0_0_0_1px_rgba(0,0,0,0.08)]" aria-hidden>
+      <path fill="#CE1126" d="M0 0h30v6.67H0z" />
+      <path fill="#FCD116" d="M0 6.67h30v6.66H0z" />
+      <path fill="#006B3F" d="M0 13.33h30V20H0z" />
+      <path fill="#000" d="m15 6.9.9 2.6h2.8l-2.2 1.6.8 2.6-2.3-1.6-2.3 1.6.8-2.6-2.2-1.6h2.8z" />
+    </svg>
+  );
 }
 
 function GoogleIcon() {
@@ -139,8 +151,8 @@ export function LoginForm() {
       {step === "phone" && (
         <form onSubmit={sendCode} className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-[28px]">Welcome to Elsasu</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Sign in or create an account in seconds. No password needed.</p>
+            <h2 className="text-2xl font-semibold tracking-tight">Sign in or sign up</h2>
+            <p className="mt-1 text-sm text-muted-foreground">New here? We create your account as you sign in.</p>
           </div>
           {googleEnabled && (
             <>
@@ -156,8 +168,10 @@ export function LoginForm() {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="login-phone">Mobile number</Label>
-            <div className="flex h-12 items-center overflow-hidden rounded-xl border border-input bg-background focus-within:ring-3 focus-within:ring-ring/50">
-              <span className="flex h-full items-center border-r bg-muted px-3 text-sm font-medium text-muted-foreground">🇬🇭 +233</span>
+            <div className="flex h-12 items-center overflow-hidden rounded-xl border border-input bg-background focus-within:border-brand-orange focus-within:ring-3 focus-within:ring-brand-orange/25">
+              <span className="flex h-full items-center gap-2 border-r bg-muted px-3 text-sm font-medium">
+                <GhanaFlag /> +233
+              </span>
               <input
                 id="login-phone"
                 type="tel"
@@ -184,26 +198,42 @@ export function LoginForm() {
             <ArrowLeft className="size-4" /> Change number
           </button>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Enter your code</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Sent to <span className="font-medium text-foreground">{formatGhanaPhone(phone)}</span></p>
+            <h2 className="text-2xl font-semibold tracking-tight">Enter your code</h2>
+            <p className="mt-1 text-sm text-muted-foreground">We texted a 6-digit code to <span className="font-medium text-foreground">{formatGhanaPhone(phone)}</span></p>
           </div>
-          <Input
-            ref={codeRef}
-            value={code}
-            onChange={(e) => {
-              const v = e.target.value.replace(/\D/g, "").slice(0, 6);
-              setCode(v);
-              if (v.length === 6) verify(v);
-            }}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="\d{6}"
-            maxLength={6}
-            placeholder="••••••"
-            aria-label="6-digit code"
-            aria-invalid={Boolean(error)}
-            className="h-14 rounded-xl text-center font-mono text-2xl tracking-[0.5em]"
-          />
+          {/* One real input (keeps SMS autofill and paste working) drawn as six boxes. */}
+          <div className="relative">
+            <input
+              ref={codeRef}
+              value={code}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                setCode(v);
+                if (v.length === 6) verify(v);
+              }}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="\d{6}"
+              maxLength={6}
+              aria-label="6-digit code"
+              aria-invalid={Boolean(error)}
+              className="peer absolute inset-0 z-10 w-full cursor-text opacity-0"
+            />
+            <div className="grid grid-cols-6 gap-2" aria-hidden>
+              {Array.from({ length: 6 }, (_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "grid h-14 place-items-center rounded-xl border bg-background font-mono text-2xl font-semibold tabular-nums transition-colors",
+                    i === Math.min(code.length, 5) && "peer-focus:border-brand-orange peer-focus:ring-3 peer-focus:ring-brand-orange/25",
+                    error && "border-destructive/60",
+                  )}
+                >
+                  {code[i] ?? ""}
+                </span>
+              ))}
+            </div>
+          </div>
           {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
           <Button type="submit" variant="accent" size="xl" className="w-full" disabled={busy || code.length !== 6}>
             {busy ? <Loader2 className="animate-spin" /> : "Verify"}
@@ -221,7 +251,7 @@ export function LoginForm() {
       {step === "name" && (
         <form onSubmit={saveName} className="space-y-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Welcome! What&apos;s your name?</h1>
+            <h2 className="text-2xl font-semibold tracking-tight">Welcome! What&apos;s your name?</h2>
             <p className="mt-1 text-sm text-muted-foreground">So your driver knows who to look for.</p>
           </div>
           <div className="space-y-1.5">
