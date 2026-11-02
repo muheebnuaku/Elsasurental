@@ -7,7 +7,8 @@ import type { Tables, Enums } from "@/types/supabase";
 export type VehicleType = Tables<"vehicle_types">;
 export type Vehicle = Tables<"vehicles">;
 export type PricingRule = Tables<"pricing_rules">;
-export type Destination = Tables<"destinations">;
+/** A destination with its fixed same-day-return price per vehicle type (vehicle_type_id → GH₵). */
+export type Destination = Tables<"destinations"> & { prices: Record<string, number> };
 export type Addon = Tables<"addons">;
 export type TripType = Enums<"trip_type">;
 
@@ -51,11 +52,14 @@ export async function getDestinations(): Promise<Destination[]> {
 
   const { data, error } = await createPublicClient()
     .from("destinations")
-    .select("*")
+    .select("*, destination_prices(vehicle_type_id, price)")
     .eq("active", true)
     .order("est_hours");
   if (error) throw error;
-  return data;
+  return data.map(({ destination_prices, ...d }) => ({
+    ...d,
+    prices: Object.fromEntries(destination_prices.map((p) => [p.vehicle_type_id, p.price])),
+  }));
 }
 
 export async function getAddons(): Promise<Addon[]> {

@@ -121,6 +121,18 @@ Search the code for `TODO(confirm)`. Current defaults:
 2. Authentication → Hooks → **Send SMS** → HTTP → URL `https://<your-domain>/api/auth/sms-hook`.
    Generate the secret there and put it in `SUPABASE_SMS_HOOK_SECRET`.
 3. Set `SMS_PROVIDER` (`arkesel` or `hubtel`), its API key(s) and an approved `SMS_SENDER_ID`.
+4. Keep **Confirm phone** switched on (Phone provider settings). Google accounts add their number with an SMS
+   code; without confirmations the number would be saved unverified.
+
+## Google sign-in
+
+1. Google Cloud Console → APIs & Services → OAuth consent screen: app name "Elsasu Rentals", your support email,
+   logo, and the authorised domain (your site's domain). Publish it.
+2. Credentials → Create credentials → OAuth client ID → Web application. Authorised redirect URI:
+   `https://<project-ref>.supabase.co/auth/v1/callback`.
+3. Supabase → Authentication → Sign In / Providers → Google: enable, paste the client ID and secret.
+4. Supabase → Authentication → URL Configuration: Site URL = your site; add `https://<your-domain>/**` to
+   Redirect URLs. The "Continue with Google" button appears on /login automatically once the provider is on.
 
 ## Payments (Paystack)
 
@@ -209,7 +221,7 @@ don't drop them: Sentry via `/monitoring`, PostHog via `/ingest`.
 
 ## Go-live checklist
 
-1. Supabase project created; run migrations (`supabase db push --linked`); paste `supabase/production-catalog.sql` into the SQL Editor once (van types, prices, destinations, add-ons; no test data); set the Send SMS hook to `https://<domain>/api/auth/sms-hook`.
+1. Supabase project created; run migrations (`supabase db push --linked`); paste `supabase/production-catalog.sql` into the SQL Editor (vehicle types, prices, destinations, add-ons; no test data; safe to re-run after new migrations); set the Send SMS hook to `https://<domain>/api/auth/sms-hook`.
 2. Paystack **test** keys → run one real MoMo test payment; then live keys; webhook URL `https://<domain>/api/webhooks/paystack`.
 3. WhatsApp templates (`elsasu_<event>`) approved; SMS sender ID registered; Resend domain verified.
 4. Real prices, vans, photos, business phone/WhatsApp/email (search `TODO(confirm)`).

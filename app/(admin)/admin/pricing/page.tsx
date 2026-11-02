@@ -15,7 +15,7 @@ export default async function PricingAdminPage() {
   const [{ data: types }, { data: rules }, { data: dests }, { data: addons }, { data: promos }] = await Promise.all([
     supabase.from("vehicle_types").select("id, name").order("sort_order"),
     supabase.from("pricing_rules").select("*").eq("active", true),
-    supabase.from("destinations").select("*").order("est_hours"),
+    supabase.from("destinations").select("*, destination_prices(vehicle_type_id, price)").order("est_hours"),
     supabase.from("addons").select("*").order("price"),
     supabase.from("promo_codes").select("*").order("created_at", { ascending: false }),
   ]);
@@ -38,9 +38,16 @@ export default async function PricingAdminPage() {
       ))}
 
       <Panel title="Fixed-price destinations (same-day return from Accra)">
-        {(dests ?? []).map((d) => <DestinationForm key={d.id} dest={d} />)}
+        <p className="mb-1 text-xs text-muted-foreground">One price per vehicle type. Leave a price empty if that vehicle doesn&apos;t go there.</p>
+        {(dests ?? []).map(({ destination_prices, ...d }) => (
+          <DestinationForm
+            key={d.id}
+            types={types ?? []}
+            dest={{ ...d, prices: Object.fromEntries(destination_prices.map((p) => [p.vehicle_type_id, p.price])) }}
+          />
+        ))}
         <p className="mt-3 text-xs font-semibold text-muted-foreground uppercase">Add a destination</p>
-        <DestinationForm />
+        <DestinationForm types={types ?? []} />
       </Panel>
 
       <div className="grid gap-6 lg:grid-cols-2">

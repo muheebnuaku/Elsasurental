@@ -6,7 +6,8 @@ import type { Database } from "@/types/supabase";
 type TripType = Database["public"]["Enums"]["trip_type"];
 type AddonUnit = Database["public"]["Enums"]["addon_unit"];
 
-export type CatalogVanType = { id: string; slug: string; name: string; seats: number };
+/** category "van" is chosen automatically by group size; "suv" only when the customer picks it. */
+export type CatalogVanType = { id: string; slug: string; name: string; seats: number; category?: string };
 export type CatalogRule = {
   vehicle_type_id: string;
   trip_type: TripType;
@@ -20,8 +21,8 @@ export type CatalogRule = {
 export type CatalogDestination = {
   slug: string;
   name: string;
-  price_8_seater: number;
-  price_14_seater: number;
+  /** Fixed same-day-return price per vehicle type (vehicle_type_id → GH₵). */
+  prices: Record<string, number>;
   est_hours: number;
   distance_km: number | null;
 };
@@ -82,15 +83,21 @@ export class QuoteError extends Error {}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** 1–8 → 8-seater, 9–14 → 14-seater, 15+ → mix of vans (largest first, smallest that fits for the rest). */
+/**
+ * A chosen type (forcedSlug) is used as is. Otherwise only vans are picked: 1–8 → 8-seater, 9–14 → 14-seater,
+ * 15+ → mix of vans (largest first, smallest that fits for the rest). SUVs are used only when chosen.
+ */
 export function allocateVans(passengers: number, vanTypes: CatalogVanType[], forcedSlug?: string): CatalogVanType[] {
   if (!Number.isInteger(passengers) || passengers < 1) throw new QuoteError("Passengers must be at least 1");
-  const sorted = [...vanTypes].sort((a, b) => a.seats - b.seats);
-  if (!sorted.length) throw new QuoteError("No vans available");
+  const all = [...vanTypes].sort((a, b) => a.seats - b.seats);
+  if (!all.length) throw new QuoteError("No vehicles available");
 
-  const forced = forcedSlug ? sorted.find((t) => t.slug === forcedSlug) : undefined;
-  if (forcedSlug && !forced) throw new QuoteError(`Unknown van type: ${forcedSlug}`);
+  const forced = forcedSlug ? all.find((t) => t.slug === forcedSlug) : undefined;
+  if (forcedSlug && !forced) throw new QuoteError(`Unknown vehicle type: ${forcedSlug}`);
   if (forced) return Array.from({ length: Math.ceil(passengers / forced.seats) }, () => forced);
+
+  const vanOnly = all.filter((t) => (t.category ?? "van") === "van");
+  const sorted = vanOnly.length ? vanOnly : all;
 
   const largest = sorted[sorted.length - 1]!;
   const vans: CatalogVanType[] = [];
@@ -146,7 +153,9 @@ export function getQuote(
 
     if (destination) {
       // Fixed price: same-day return from Accra, enough time for the drive both ways plus a few hours there.
-      base = van.seats <= 8 ? destination.price_8_seater : destination.price_14_seater;
+      const fixed = destination.prices[van.id];
+      if (fixed === undefined) throw new QuoteError(`No fixed price to ${destination.name} for the ${van.name} yet. Message us for a price.`);
+      base = fixed;
       vanIncludedKm = null; // distance is covered by the fixed price
       vanIncludedHours = Math.max(rule.included_hours, destination.est_hours * 2 + 4);
       lines.push({ label: `${label ? label + " · " : ""}Accra ⇄ ${destination.name} (return)`, amount: base, kind: "base" });

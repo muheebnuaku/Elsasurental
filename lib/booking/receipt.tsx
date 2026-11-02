@@ -5,6 +5,7 @@ import { tripTypeLabels } from "@/lib/content";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { formatGhanaPhone } from "@/lib/phone";
 import { site } from "@/lib/site";
+import { getBusiness, type Business } from "@/lib/business";
 
 // PDF receipt for a booking (and its group). Uses the built-in Helvetica, so "GHS" instead of the ₵ glyph.
 const money = (n: number) => formatMoney(n).replace("GH₵", "GHS ");
@@ -27,7 +28,7 @@ const s = StyleSheet.create({
 
 type Line = { label: string; amount: number };
 
-function Receipt({ g }: { g: BookingGroup }) {
+function Receipt({ g, business }: { g: BookingGroup; business: Business }) {
   const snap = (g.lead.quote_snapshot ?? {}) as { lines?: Line[] };
   const lines = snap.lines ?? [];
   const successful = g.payments.filter((p) => p.status === "success");
@@ -82,13 +83,13 @@ function Receipt({ g }: { g: BookingGroup }) {
         </View>
 
         <Text style={s.foot}>
-          {site.name} · {site.address} · {formatGhanaPhone(site.phone)} · {site.email}{"\n"}Payments processed securely by Paystack. Thank you for riding with us.
+          {site.name} · {business.address} · {formatGhanaPhone(business.phone)} · {business.email}{"\n"}Payments processed securely by Paystack. Thank you for riding with us.
         </Text>
       </Page>
     </Document>
   );
 }
 
-export function renderReceipt(g: BookingGroup) {
-  return renderToBuffer(<Receipt g={g} />);
+export async function renderReceipt(g: BookingGroup) {
+  return renderToBuffer(<Receipt g={g} business={await getBusiness()} />);
 }

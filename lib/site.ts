@@ -5,11 +5,11 @@ export const site = {
   shortName: "Elsasu",
   tagline: "Rent Smart. Drive Better.",
   description:
-    "8- and 14-seater minivans with professional drivers across Ghana. Instant quotes for any route, MoMo payment, live tracking.",
+    "Chauffeur-driven minivans and SUVs across Ghana, always with a professional driver. Instant quotes for any route, MoMo or card payment, live tracking.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  // TODO(confirm): real business phone, WhatsApp number, email and address
-  phone: "+233200000000",
-  whatsapp: "+233200000000",
+  // Fallback contact details only. The live ones are edited in Admin → Business (business_settings).
+  phone: "+233545415019",
+  whatsapp: "+233545415019",
   email: "bookings@elsasu.com",
   address: "Accra, Ghana",
   timezone: "Africa/Accra",
@@ -26,7 +26,13 @@ export const bookingRules = {
   // Night surcharge window, Accra local time (GMT, no DST)
   nightStartHour: 22,
   nightEndHour: 5,
-  // TODO(confirm): self-drive. Default is driver-only.
+  // TODO(confirm): waiting time, no-show, lost property and complaint windows (used in the terms).
+  freeWaitMinutes: 15, // ordinary pick-ups
+  airportFreeWaitMinutes: 60, // after the flight actually lands
+  noShowMinutes: 60, // after the free wait, with no contact
+  lostPropertyDays: 30,
+  complaintDays: 7,
+  // Confirmed by the owner: every vehicle comes with an Elsasu driver. No self-drive.
   selfDriveOffered: false,
 } as const;
 

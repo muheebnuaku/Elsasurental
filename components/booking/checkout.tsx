@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { Loader2, Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -33,6 +34,8 @@ export function Checkout({ quoteToken, total, deposit, depositPct, name, phone, 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpFor, setOtpFor] = useState<string | null>(null);
+  // "sms": sign in with this number. "phone_change": add it to the signed-in (Google) account.
+  const [otpType, setOtpType] = useState<"sms" | "phone_change">("sms");
   const [code, setCode] = useState("");
   const codeRef = useRef<HTMLInputElement>(null);
 
@@ -48,21 +51,39 @@ export function Checkout({ quoteToken, total, deposit, depositPct, name, phone, 
     const signedPhone = data.user?.phone ? `+${data.user.phone.replace(/^\+/, "")}` : null;
     if (data.user && signedPhone === e164) return book();
 
+    // Signed in with Google and no number yet: confirm this one and add it to the same account.
+    if (data.user && !signedPhone) {
+      const { error } = await supabase.auth.updateUser({ phone: e164 });
+      if (!error) return askForCode("phone_change");
+      if (error.code !== "phone_exists") return sendFailed(error.status);
+      // The number already has its own account: continue as that account (below).
+    }
+
     // Verify this number first (also creates the customer's account).
     if (data.user) await supabase.auth.signOut();
     const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
+    if (error) return sendFailed(error.status);
+    askForCode("sms");
+  }
+
+  function askForCode(type: "sms" | "phone_change") {
     setBusy(false);
-    if (error) return setError(error.status === 429 ? "Too many attempts. Please wait a minute." : "We couldn't send a code to that number.");
     setCode("");
+    setOtpType(type);
     setOtpFor(e164);
     setTimeout(() => codeRef.current?.focus(), 80);
+  }
+
+  function sendFailed(status?: number) {
+    setBusy(false);
+    setError(status === 429 ? "Too many attempts. Please wait a minute." : "We couldn't send a code to that number.");
   }
 
   async function verify(token: string) {
     if (!otpFor || token.length !== 6) return;
     setBusy(true);
     setError(null);
-    const { data, error } = await supabase.auth.verifyOtp({ phone: otpFor, token, type: "sms" });
+    const { data, error } = await supabase.auth.verifyOtp({ phone: otpFor, token, type: otpType });
     if (error) {
       setBusy(false);
       setCode("");
@@ -117,14 +138,21 @@ export function Checkout({ quoteToken, total, deposit, depositPct, name, phone, 
       {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
       <p className="flex items-start gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-        Secure payment by Paystack: MTN, Telecel, AirtelTigo MoMo or card. We never see your PIN or card number.
+        <span>
+          Secure payment by Paystack: MTN, Telecel, AirtelTigo MoMo or card. We never see your PIN or card number. By paying you
+          accept our{" "}
+          <Link href="/terms" target="_blank" className="font-medium text-foreground underline underline-offset-2">
+            terms and cancellation policy
+          </Link>
+          .
+        </span>
       </p>
 
       <Dialog open={Boolean(otpFor)} onOpenChange={(o) => !o && !busy && setOtpFor(null)}>
         <DialogContent className="max-w-sm">
           <DialogTitle>Confirm your number</DialogTitle>
           <DialogDescription>
-            We sent a 6-digit code to {otpFor ? formatGhanaPhone(otpFor) : ""}. This keeps your booking safe and creates your account.
+            We sent a 6-digit code to {otpFor ? formatGhanaPhone(otpFor) : ""}. {otpType === "phone_change" ? "We'll add it to your account for trip updates." : "This keeps your booking safe and creates your account."}
           </DialogDescription>
           <Input
             ref={codeRef}

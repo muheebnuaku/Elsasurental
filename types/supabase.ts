@@ -119,6 +119,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"business_settings": {
+                  Row: {
+                    "address": string,"email": string,"id": boolean,"phone": string,"updated_at": string,"whatsapp": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address": string,"email": string,"id"?: boolean,"phone": string,"updated_at"?: string,"whatsapp": string
+                  }
+                  Update: {
+                    "address"?: string,"email"?: string,"id"?: boolean,"phone"?: string,"updated_at"?: string,"whatsapp"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"companies": {
                   Row: {
                     "billing_email": string | null,"created_at": string,"credit_terms_days": number,"discount_pct": number,"id": string,"name": string,"updated_at": string
@@ -159,16 +173,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"destinations": {
+                },"destination_prices": {
                   Row: {
-                    "active": boolean,"created_at": string,"description": string | null,"distance_km": number | null,"est_hours": number,"id": string,"image_url": string | null,"lat": number | null,"lng": number | null,"name": string,"price_14_seater": number,"price_8_seater": number,"region": string,"slug": string,"updated_at": string
+                    "destination_id": string,"price": number,"vehicle_type_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"created_at"?: string,"description"?: string | null,"distance_km"?: number | null,"est_hours": number,"id"?: string,"image_url"?: string | null,"lat"?: number | null,"lng"?: number | null,"name": string,"price_14_seater": number,"price_8_seater": number,"region": string,"slug": string,"updated_at"?: string
+                    "destination_id": string,"price": number,"vehicle_type_id": string
                   }
                   Update: {
-                    "active"?: boolean,"created_at"?: string,"description"?: string | null,"distance_km"?: number | null,"est_hours"?: number,"id"?: string,"image_url"?: string | null,"lat"?: number | null,"lng"?: number | null,"name"?: string,"price_14_seater"?: number,"price_8_seater"?: number,"region"?: string,"slug"?: string,"updated_at"?: string
+                    "destination_id"?: string,"price"?: number,"vehicle_type_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "destination_prices_destination_id_fkey"
+      columns: ["destination_id"]
+isOneToOne: false
+      referencedRelation: "destinations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "destination_prices_vehicle_type_id_fkey"
+      columns: ["vehicle_type_id"]
+isOneToOne: false
+      referencedRelation: "vehicle_types"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"destinations": {
+                  Row: {
+                    "active": boolean,"created_at": string,"description": string | null,"distance_km": number | null,"est_hours": number,"id": string,"image_url": string | null,"lat": number | null,"lng": number | null,"name": string,"region": string,"slug": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "active"?: boolean,"created_at"?: string,"description"?: string | null,"distance_km"?: number | null,"est_hours": number,"id"?: string,"image_url"?: string | null,"lat"?: number | null,"lng"?: number | null,"name": string,"region": string,"slug": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "active"?: boolean,"created_at"?: string,"description"?: string | null,"distance_km"?: number | null,"est_hours"?: number,"id"?: string,"image_url"?: string | null,"lat"?: number | null,"lng"?: number | null,"name"?: string,"region"?: string,"slug"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -453,14 +493,14 @@ isOneToOne: true
                   ]
                 },"vehicle_types": {
                   Row: {
-                    "created_at": string,"description": string | null,"id": string,"luggage_capacity": number,"name": string,"seats": number,"slug": string,"sort_order": number,"updated_at": string
+                    "category": string,"created_at": string,"description": string | null,"id": string,"luggage_capacity": number,"name": string,"seats": number,"slug": string,"sort_order": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name": string,"seats": number,"slug": string,"sort_order"?: number,"updated_at"?: string
+                    "category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name": string,"seats": number,"slug": string,"sort_order"?: number,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name"?: string,"seats"?: number,"slug"?: string,"sort_order"?: number,"updated_at"?: string
+                    "category"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"luggage_capacity"?: number,"name"?: string,"seats"?: number,"slug"?: string,"sort_order"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     

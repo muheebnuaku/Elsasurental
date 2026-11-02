@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export function VanPhoto({
   photos,
   seats,
+  category,
   alt,
   className,
   priority = false,
@@ -16,13 +17,15 @@ export function VanPhoto({
 }: {
   photos: readonly string[] | null | undefined;
   seats: number;
+  /** "suv" picks an SUV stock photo. */
+  category?: string;
   alt: string;
   className?: string;
   priority?: boolean;
   sizes?: string;
   illustrate?: boolean;
 }) {
-  const src = illustrate ? undefined : photos?.find(Boolean) ?? stockVanPhoto(seats);
+  const src = illustrate ? undefined : photos?.find(Boolean) ?? stockVanPhoto(seats, category);
   return (
     <div
       className={cn(

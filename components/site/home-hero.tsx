@@ -17,7 +17,8 @@ const moments = [
 ];
 
 export function HomeHero({ fleet }: { fleet: FleetType[] }) {
-  const vanTypes: WidgetVanType[] = fleet.map((t) => ({
+  // The quick quote suggests a van by group size; SUVs are booked by choosing them (fleet page / booking form).
+  const vanTypes: WidgetVanType[] = fleet.filter((t) => t.category === "van").map((t) => ({
     slug: t.slug,
     name: t.name,
     seats: t.seats,
@@ -43,7 +44,7 @@ export function HomeHero({ fleet }: { fleet: FleetType[] }) {
             <span className="font-display font-normal tracking-normal text-brand-orange italic">We&apos;ll drive.</span>
           </h1>
           <p className="mt-4 max-w-xl text-pretty text-white/75 sm:text-lg">
-            Comfortable 8 and 14-seater vans with friendly, professional drivers, anywhere in Ghana.
+            Comfortable minivans and SUVs with friendly, professional drivers, anywhere in Ghana.
             See your price in seconds and pay with MoMo.
           </p>
           <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/80">
@@ -59,7 +60,7 @@ export function HomeHero({ fleet }: { fleet: FleetType[] }) {
             ))}
           </ul>
 
-          <HeroJourney className="mt-6 -mx-2 max-w-xl sm:mt-8 lg:mx-0" />
+          <HeroJourney className="mt-6 -mx-4 max-w-xl sm:mt-8 sm:-mx-2 lg:mx-0" />
         </div>
 
         <div className="min-w-0 animate-in fade-in slide-in-from-bottom-6 duration-700">

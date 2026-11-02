@@ -4,7 +4,9 @@ import { verifyStandardWebhook } from "@/lib/webhooks/standard";
 // Supabase Auth "Send SMS" hook: Supabase calls this with the login code; we deliver it via Arkesel/Hubtel.
 // Configure in Supabase → Authentication → Hooks → Send SMS (HTTP) → this URL + the generated secret.
 
-type HookPayload = { user?: { phone?: string }; sms?: { otp?: string } };
+// sms.phone is where the code goes. It differs from user.phone when a signed-in (e.g. Google) account
+// is adding a number (phone_change), so prefer it.
+type HookPayload = { user?: { phone?: string }; sms?: { otp?: string; phone?: string } };
 
 const fail = (status: number, message: string) =>
   Response.json({ error: { http_code: status, message } }, { status });
@@ -17,7 +19,7 @@ export async function POST(req: Request) {
   if (!verifyStandardWebhook(secret, req.headers, body)) return fail(401, "Invalid signature");
 
   const payload = JSON.parse(body) as HookPayload;
-  const phone = payload.user?.phone;
+  const phone = payload.sms?.phone || payload.user?.phone;
   const otp = payload.sms?.otp;
   if (!phone || !otp) return fail(400, "Missing phone or code");
 

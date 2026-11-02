@@ -6,7 +6,7 @@ import { getAddons, getDestinations, getFleet } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Book a van",
-  description: "Get an exact price instantly and book an 8- or 14-seater minivan with a driver anywhere in Ghana.",
+  description: "Get an exact price instantly and book a minivan or SUV with a professional driver anywhere in Ghana.",
 };
 
 // TODO(Step 7-8): phone OTP + Paystack deposit replace the WhatsApp reservation at the end of this form.

@@ -20,6 +20,7 @@ import { formatGhanaPhone, normalizeGhanaPhone } from "@/lib/phone";
 import { bookingRules } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { formatMoney, whatsappLink } from "@/lib/format";
+import { useBusiness } from "@/components/business-provider";
 import { popularPlaces, tripTypeHints, tripTypeLabels } from "@/lib/content";
 import { tripTypes, type TripRequestInput } from "@/lib/validators/trip";
 import { useToday } from "@/lib/use-today";
@@ -63,6 +64,7 @@ const needsHours: TripType[] = ["half_day", "full_day", "event", "corporate_shut
 export function BookingForm({ vanTypes, destinations, addons }: Props) {
   const sp = useSearchParams();
   const today = useToday();
+  const business = useBusiness();
 
   const initialTrip = tripTypes.includes(sp.get("trip") as TripType) ? (sp.get("trip") as TripType) : "airport";
   const destFromUrl = destinations.find((d) => d.slug === (sp.get("dest") ?? sp.get("to")));
@@ -80,6 +82,7 @@ export function BookingForm({ vanTypes, destinations, addons }: Props) {
     const pax = Number(sp.get("pax"));
     return Number.isInteger(pax) && pax > 0 ? Math.min(pax, 60) : vanFromUrl?.seats ?? 6;
   });
+  const [vehicle, setVehicle] = useState(vanFromUrl?.slug ?? ""); // "" = best-fit van
   const [chosenAddons, setChosenAddons] = useState<Record<string, number>>({});
   const [name, setName] = useState(sp.get("name") ?? "");
   const [phone, setPhone] = useState("");
@@ -153,10 +156,11 @@ export function BookingForm({ vanTypes, destinations, addons }: Props) {
       time,
       durationHours: needsHours.includes(trip) && hours ? Number(hours) : undefined,
       days: trip === "multi_day" ? days : undefined,
-      vehicleTypeSlug: vanFromUrl && passengers <= vanFromUrl.seats ? vanFromUrl.slug : undefined,
+      // A chosen vehicle is used as is (several of it for a bigger group); otherwise the best-fit van.
+      vehicleTypeSlug: vehicle || undefined,
       addons: Object.entries(chosenAddons).filter(([, q]) => q > 0).map(([slug, qty]) => ({ slug, qty })),
     };
-  }, [trip, passengers, pickup, dropoff, stops, date, time, hours, days, chosenAddons, destinations, vanFromUrl]);
+  }, [trip, passengers, pickup, dropoff, stops, date, time, hours, days, chosenAddons, destinations, vehicle]);
 
   const [quote, setQuote] = useState<{ status: "idle" | "loading" | "ok" | "error"; data?: QuoteResponse; error?: string }>({ status: "idle" });
   const [quoteNonce, setQuoteNonce] = useState(0);
@@ -315,6 +319,29 @@ export function BookingForm({ vanTypes, destinations, addons }: Props) {
               <Stepper label="Days" value={days} min={1} max={30} onChange={setDays} />
             )}
             <Stepper label="Passengers" value={passengers} min={1} max={60} onChange={setPassengers} icon={Users} />
+            {vanTypes.length > 1 && (
+              <div className="col-span-full space-y-1.5" role="radiogroup" aria-label="Vehicle">
+                <p className="text-sm font-medium">Vehicle</p>
+                <div className="flex flex-wrap gap-2">
+                  {[{ slug: "", name: "Best fit for my group", seats: 0 }, ...vanTypes].map((v) => (
+                    <button
+                      key={v.slug || "auto"}
+                      type="button"
+                      role="radio"
+                      aria-checked={vehicle === v.slug}
+                      onClick={() => setVehicle(v.slug)}
+                      className={cn(
+                        "rounded-full border px-3.5 py-2 text-sm font-medium transition-colors",
+                        vehicle === v.slug ? "border-brand-ink bg-brand-ink text-white dark:border-white dark:bg-white dark:text-brand-ink" : "hover:border-foreground/30",
+                      )}
+                    >
+                      {v.name}
+                      {v.seats > 0 && <span className="ml-1 opacity-60">· {v.seats}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -398,7 +425,7 @@ export function BookingForm({ vanTypes, destinations, addons }: Props) {
                 <li className="flex items-center gap-2"><Check className="size-4 text-success" /> {q.included.hours} hours{q.included.km ? ` · ${q.included.km} km` : ""} included</li>
                 {quote.data?.distanceKm != null && <li className="flex items-center gap-2"><MapPin className="size-4 text-muted-foreground" /> Route ≈ {quote.data.distanceKm} km</li>}
                 {quote.data?.available ? (
-                  <li className="flex items-center gap-2 font-medium text-success"><CheckCircle2 className="size-4" /> Vans available</li>
+                  <li className="flex items-center gap-2 font-medium text-success"><CheckCircle2 className="size-4" /> Available</li>
                 ) : (
                   <li className="flex items-center gap-2 font-medium text-destructive"><AlertCircle className="size-4" /> Fully booked then. Try another time.</li>
                 )}
@@ -424,14 +451,14 @@ export function BookingForm({ vanTypes, destinations, addons }: Props) {
                 />
               )}
               {ready && (
-                <a href={whatsappLink(waMessage)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                <a href={whatsappLink(waMessage, business.whatsapp)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
                   <Send className="size-3.5" /> Prefer WhatsApp? Send this booking to our team
                 </a>
               )}
             </div>
           )}
         </div>
-        <a href={whatsappLink("Hi Elsasu, I need help with a booking.")} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <a href={whatsappLink("Hi Elsasu, I need help with a booking.", business.whatsapp)} target="_blank" rel="noopener noreferrer" className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <WhatsAppIcon className="size-4" /> Questions? Chat with a person
         </a>
       </aside>

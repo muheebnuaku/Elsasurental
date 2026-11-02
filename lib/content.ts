@@ -96,7 +96,7 @@ export const howItWorks = [
 ] as const;
 
 export const whyElsasu = [
-  { title: "Built for groups", body: "8 and 14 seats, not 4. One van instead of three cars, and everyone arrives together." },
+  { title: "The right vehicle", body: "7-seater SUVs for comfort, 8 and 14-seater vans for groups. One booking, everyone arrives together." },
   { title: "Any route, instant price", body: "No fixed packages. Quote any pick-up, stops and drop-off in seconds." },
   { title: "Pay your way", body: "Mobile Money or card, deposit now and balance later." },
   { title: "Professional drivers", body: "Licensed, vetted and rated after every trip." },
@@ -114,12 +114,12 @@ const policyText = cancellationPolicy
 
 export const faqs = [
   {
-    q: "Do your vans come with a driver?",
-    a: "Yes. Every booking includes a professional, licensed driver. Fuel for the quoted distance and the driver's time are included in your price.",
+    q: "Can I drive the vehicle myself?",
+    a: "No. Every vehicle, van or SUV, comes with a professional, licensed Elsasu driver, and only our driver may drive it. Fuel for the quoted distance and the driver's time are included in your price.",
   },
   {
-    q: "Which van do I need?",
-    a: "Up to 8 passengers fits our 8-seater; 9–14 passengers fits the 14-seater. For 15 or more we send multiple vans on one booking. Tell us your luggage too. For airport runs with lots of bags we may suggest the bigger van.",
+    q: "Which vehicle do I need?",
+    a: "Up to 8 passengers fits our 8-seater van; 9–14 passengers fits the 14-seater. For 15 or more we send several vans on one booking. For more comfort with a smaller group, choose a 7-seater SUV (such as a Toyota Highlander or Acura). Tell us about your luggage too.",
   },
   {
     q: "How is the price calculated?",
@@ -131,7 +131,7 @@ export const faqs = [
   },
   {
     q: "What is your cancellation policy?",
-    a: `Cancellations get a ${policyText}. Changes to date or time are free if a van is available.`,
+    a: `Cancellations get a ${policyText}. Date or time changes are free up to ${cancellationPolicy[1]?.minHoursBefore ?? 24} hours before pick-up if a vehicle is available. Full details are in our terms.`,
   },
   {
     q: "Can I add stops on the way?",

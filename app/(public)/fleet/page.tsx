@@ -7,8 +7,8 @@ import { getFleet } from "@/lib/catalog";
 import { formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = {
-  title: "Our fleet — 8 & 14-seater minivans",
-  description: "Air-conditioned 8- and 14-seater minivans with professional drivers. Compare and pick the right van for your group.",
+  title: "Our fleet — minivans and SUVs with a driver",
+  description: "Air-conditioned minivans and SUVs, always with a professional driver. Compare and pick the right vehicle for your trip.",
 };
 
 export default async function FleetPage() {
@@ -16,7 +16,7 @@ export default async function FleetPage() {
 
   return (
     <>
-      <PageHero eyebrow="Our fleet" title="The right van for every group" intro="Tap a van for photos, what's included and prices by trip." />
+      <PageHero eyebrow="Our fleet" title="The right vehicle for every trip" intro="Minivans for groups, SUVs for comfort. Every one comes with a professional driver. Tap a vehicle for photos, what's included and prices." />
       <Section>
         <div className="grid gap-4 md:grid-cols-2">
           {fleet.map((t, i) => (
@@ -27,10 +27,10 @@ export default async function FleetPage() {
         {fleet.length > 1 && (
           <div className="mt-6 overflow-hidden rounded-2xl border bg-card">
             <table className="w-full text-sm">
-              <caption className="sr-only">Compare vans</caption>
+              <caption className="sr-only">Compare vehicles</caption>
               <thead className="bg-secondary/70 text-left text-xs tracking-wide text-muted-foreground uppercase">
                 <tr>
-                  <th scope="col" className="px-4 py-2.5 font-semibold">Van</th>
+                  <th scope="col" className="px-4 py-2.5 font-semibold">Vehicle</th>
                   <th scope="col" className="px-4 py-2.5 font-semibold">Seats</th>
                   <th scope="col" className="hidden px-4 py-2.5 font-semibold sm:table-cell">Bags</th>
                   <th scope="col" className="px-4 py-2.5 font-semibold">From</th>

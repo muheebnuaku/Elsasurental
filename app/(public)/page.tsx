@@ -14,17 +14,19 @@ import { getDestinations, getFleet, getPublishedReviews } from "@/lib/catalog";
 import { howItWorks, services, whyElsasu } from "@/lib/content";
 import { formatHours, formatMoney } from "@/lib/format";
 import { site } from "@/lib/site";
+import { getBusiness, type Business } from "@/lib/business";
 
 export default async function HomePage() {
-  const [fleet, destinations, reviews] = await Promise.all([
+  const [fleet, destinations, reviews, business] = await Promise.all([
     getFleet(),
     getDestinations(),
     getPublishedReviews(),
+    getBusiness(),
   ]);
 
   return (
     <>
-      <LocalBusinessJsonLd />
+      <LocalBusinessJsonLd business={business} />
       <HomeHero fleet={fleet} />
       <ValueStrip />
       <Packages fleet={fleet} />
@@ -34,11 +36,11 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="Our fleet"
             title="Room for the whole group"
-            intro="Air-conditioned minivans with professional drivers. Pick the size, we handle the rest."
+            intro="Air-conditioned minivans and SUVs, always with a professional driver. Pick the vehicle, we handle the rest."
             className="mb-0 sm:mb-0"
           />
           <Link href="/fleet" className="inline-flex items-center gap-1.5 text-sm font-semibold hover:underline">
-            Compare vans <ArrowRight className="size-4" />
+            Compare vehicles <ArrowRight className="size-4" />
           </Link>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -99,7 +101,7 @@ export default async function HomePage() {
           <SectionHeading
             eyebrow="Popular trips from Accra"
             title="Fixed prices to Ghana's favourite places"
-            intro="Same-day return with your driver. Prices from the 8-seater."
+            intro="Same-day return with your driver. Prices from our most affordable vehicle."
           />
           <AutoCarousel label="Destinations" intervalMs={3200} itemClassName="basis-[calc((100%-0.625rem)/2)] sm:basis-[calc((100%-1.25rem)/3)]" desktopGrid="lg:grid-cols-5 lg:gap-2.5">
             {destinations.map((d) => (
@@ -109,7 +111,7 @@ export default async function HomePage() {
                 image={d.image_url}
                 eyebrow={d.region}
                 title={d.name}
-                badge={formatMoney(d.price_8_seater)}
+                badge={Object.keys(d.prices).length ? `from ${formatMoney(Math.min(...Object.values(d.prices)))}` : undefined}
                 className="min-h-48 sm:min-h-56"
                 sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
                 footer={
@@ -201,7 +203,7 @@ function WhyElsasu() {
   );
 }
 
-function LocalBusinessJsonLd() {
+function LocalBusinessJsonLd({ business }: { business: Business }) {
   const data = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -209,8 +211,8 @@ function LocalBusinessJsonLd() {
     name: site.name,
     description: site.description,
     url: site.url,
-    telephone: site.phone,
-    email: site.email,
+    telephone: business.phone,
+    email: business.email,
     address: { "@type": "PostalAddress", addressLocality: "Accra", addressCountry: "GH" },
     areaServed: { "@type": "Country", name: "Ghana" },
     priceRange: "GHS",

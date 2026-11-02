@@ -69,7 +69,7 @@ schema_paths = []
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = ["./seed.sql"]
+sql_paths = ["./production-catalog.sql", "./seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.
@@ -259,8 +259,10 @@ otp_expiry = 3600
 # Allow/disallow new user signups via SMS to your project.
 # Guests book with phone OTP and get an account automatically.
 enable_signup = true
-# If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
+# Must be true, here and in production (Authentication → Sign In / Providers → Phone → Confirm phone).
+# Google accounts add a phone with updateUser(); without confirmations the number is set unverified.
+# Phone OTP sign-in is unaffected (the code is always required).
+enable_confirmations = true
 # Template for sending OTP to users
 template = "Your Elsasu code is {{ .Code }}"
 # Controls the minimum amount of time that must pass before sending another sms otp.

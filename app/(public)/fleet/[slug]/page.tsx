@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Briefcase, Check, ChevronRight, Clock, Gauge, Moon, Plus, Snowflake, Users } from "lucide-react";
+import { ArrowRight, Briefcase, CalendarCheck, Check, ChevronRight, Clock, Gauge, Moon, Plus, Snowflake, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Section } from "@/components/site/section";
 import { VanGallery, type GalleryItem } from "@/components/fleet/van-gallery";
@@ -60,7 +60,7 @@ async function VanDetails({ params }: { params: PageProps<"/fleet/[slug]">["para
   // Admin-uploaded photos and videos of these vans first; stock photos until there are any.
   const uploaded = type.vehicles.flatMap((v) => v.photos).filter(Boolean);
   const media: GalleryItem[] = [
-    ...(uploaded.length ? uploaded : stockVanGallery(type.seats)).map((src) => ({ type: "image" as const, src })),
+    ...(uploaded.length ? uploaded : stockVanGallery(type.seats, type.category)).map((src) => ({ type: "image" as const, src })),
     ...type.vehicles.flatMap((v) => v.videos).filter(Boolean).map((src) => ({ type: "video" as const, src })),
   ];
   const rules = tripOrder
@@ -96,16 +96,18 @@ async function VanDetails({ params }: { params: PageProps<"/fleet/[slug]">["para
               <div>
                 <p className="text-xs text-white/60">Prices from</p>
                 <p className="text-3xl font-bold tracking-tight tabular-nums">{type.fromPrice !== null ? formatMoney(type.fromPrice) : "—"}</p>
-                <p className="text-xs text-white/60">driver & fuel included</p>
+                <p className="text-xs text-white/60">driver & fuel included · no self-drive</p>
               </div>
               <p className="text-right text-xs text-white/60">{type.vehicles.length} in our fleet</p>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
-              <Button asChild variant="accent" size="xl">
-                <Link href={`/book?van=${type.slug}`}>Book this van <ArrowRight data-icon="inline-end" /></Link>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button asChild variant="accent" size="xl" className="h-11 gap-1.5 px-3 text-[15px] [&_svg]:size-4">
+                <Link href={`/book?van=${type.slug}`}><CalendarCheck /> Book this {type.category === "suv" ? "SUV" : "van"}</Link>
               </Button>
-              <AskButton message={`Tell me about the ${type.name}. Is it right for my group?`}>Ask about this van</AskButton>
+              <AskButton message={`Tell me about the ${type.name}. Is it right for my group?`} className="h-11 gap-1.5 px-3 text-[15px] [&_svg]:size-4">
+                Ask about it
+              </AskButton>
             </div>
 
             {features.length > 0 && (
@@ -118,7 +120,7 @@ async function VanDetails({ params }: { params: PageProps<"/fleet/[slug]">["para
 
             {type.vehicles.length > 0 && (
               <div className="mt-5 border-t pt-4">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Vans in this class</p>
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">In this class</p>
                 <ul className="mt-2 divide-y text-sm">
                   {type.vehicles.map((v) => (
                     <li key={v.id} className="flex items-center justify-between gap-3 py-2">

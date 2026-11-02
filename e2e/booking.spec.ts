@@ -17,7 +17,7 @@ test("book a van and pay the deposit", async ({ page, browser }, testInfo) => {
 
   // Live quote from the pricing engine
   await expect(page.getByText("Accra ⇄ Cape Coast (return)")).toBeVisible();
-  await expect(page.locator("aside").getByText("Vans available")).toBeVisible();
+  await expect(page.locator("aside").getByText("Available", { exact: true })).toBeVisible();
 
   await page.fill("#bf-name", "Esi Owusu");
   await page.fill("#bf-phone", testPhone);

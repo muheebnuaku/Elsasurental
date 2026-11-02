@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { tripTypeLabels } from "@/lib/content";
 import { site } from "@/lib/site";
+import { getBusiness } from "@/lib/business";
 import { buildMessage, maskPhone, type MessageContext, type NotifyEvent } from "@/lib/notifications/messages";
 import { sendEmail, sendSmsMessage, sendWhatsAppTemplate, type SendResult } from "@/lib/notifications/channels";
 import { reportError } from "@/lib/observability";
@@ -54,6 +55,7 @@ export async function notify(event: NotifyEvent, bookingId: string, opts: { amou
     driverPhone,
     vanPlate: van?.plate ?? null,
     amount: opts.amount,
+    business: await getBusiness(),
   };
   const msg = buildMessage(event, ctx);
   const key = (channel: string) => `${event}:${b.ref_code}:${channel}${opts.suffix ? `:${opts.suffix}` : ""}`;

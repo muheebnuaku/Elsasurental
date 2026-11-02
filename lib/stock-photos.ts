@@ -7,17 +7,20 @@ const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?aut
 export const stockPhotos = {
   van8: u("1653978681856-ab2f1feb221b"), // modern white people-carrier
   van14: u("1521014710171-f44dfe788ece"), // Toyota HiAce-style van at sunset
+  suv: u("1767749995460-933d082f0b4a"), // black full-size SUV
   hero: u("1697049643520-cfa552d99de7", 2000), // on the road, view from inside a vehicle
   city: u("1568025848823-86404cd04ad1"), // aerial view of a West African city
   driver: u("1603094746214-44fe6eb80160"), // driver's seat
 } as const;
 
-export function stockVanPhoto(seats: number) {
+export function stockVanPhoto(seats: number, category = "van") {
+  if (category === "suv") return stockPhotos.suv;
   return seats > 8 ? stockPhotos.van14 : stockPhotos.van8;
 }
 
-/** Gallery for a van type until the admin uploads real photos of each van. */
-export function stockVanGallery(seats: number) {
+/** Gallery for a vehicle type until the admin uploads real photos of each vehicle. */
+export function stockVanGallery(seats: number, category = "van") {
+  if (category === "suv") return [stockPhotos.suv, u("1769641156823-3b182d0b0e53"), stockPhotos.driver];
   return seats > 8
     ? [stockPhotos.van14, u("1650807486050-a142ea418b19"), u("1669887058626-77dea2765b79"), stockPhotos.driver]
     : [stockPhotos.van8, u("1678747172256-b37b7ac99cfc"), u("1587813369290-091c9d432daf"), stockPhotos.driver];

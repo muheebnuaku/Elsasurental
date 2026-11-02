@@ -33,18 +33,22 @@ export function PricingRuleForm({ rule }: { rule: RuleRow }) {
   );
 }
 
-export type DestRow = { id: string; name: string; region: string; price_8_seater: number; price_14_seater: number; est_hours: number; distance_km: number | null; image_url: string | null; active: boolean };
+export type DestRow = { id: string; name: string; region: string; prices: Record<string, number>; est_hours: number; distance_km: number | null; image_url: string | null; active: boolean };
 
-export function DestinationForm({ dest }: { dest?: DestRow }) {
+/** One price box per vehicle type (field name "price:<vehicle_type_id>"); empty = that vehicle doesn't go there. */
+export function DestinationForm({ dest, types }: { dest?: DestRow; types: { id: string; name: string }[] }) {
   return (
-    <ActionForm action={saveDestination} className="grid grid-cols-2 items-end gap-2 border-b py-2.5 last:border-b-0 sm:grid-cols-4 lg:grid-cols-[1.2fr_1fr_repeat(4,0.8fr)_1.6fr_auto_auto]">
+    <ActionForm action={saveDestination} className="grid grid-cols-2 items-end gap-2 border-b py-2.5 last:border-b-0 sm:grid-cols-4 lg:grid-cols-8">
       {(pending) => (
         <>
           <input type="hidden" name="id" value={dest?.id ?? ""} />
           <Cell label="Name"><input name="name" required defaultValue={dest?.name} className={fieldCls} /></Cell>
           <Cell label="Region"><input name="region" required defaultValue={dest?.region} className={fieldCls} /></Cell>
-          <Cell label="8-seater GH₵"><input name="price_8_seater" type="number" step="0.01" min={0} required defaultValue={dest?.price_8_seater} className={num} /></Cell>
-          <Cell label="14-seater GH₵"><input name="price_14_seater" type="number" step="0.01" min={0} required defaultValue={dest?.price_14_seater} className={num} /></Cell>
+          {types.map((t) => (
+            <Cell key={t.id} label={`${t.name} GH₵`}>
+              <input name={`price:${t.id}`} type="number" step="0.01" min={0} defaultValue={dest?.prices[t.id] ?? ""} className={num} />
+            </Cell>
+          ))}
           <Cell label="Hours each way"><input name="est_hours" type="number" step="0.25" min={0.25} required defaultValue={dest?.est_hours} className={num} /></Cell>
           <Cell label="Km"><input name="distance_km" type="number" min={0} defaultValue={dest?.distance_km ?? ""} className={num} /></Cell>
           <Cell label="Photo URL"><input name="image_url" type="url" defaultValue={dest?.image_url ?? ""} placeholder="https://…" className={fieldCls} /></Cell>

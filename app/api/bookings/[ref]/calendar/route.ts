@@ -1,6 +1,6 @@
 import { loadBookingGroup, place } from "@/lib/booking/details";
 import { tripTypeLabels } from "@/lib/content";
-import { site } from "@/lib/site";
+import { getBusiness } from "@/lib/business";
 
 // GET /api/bookings/:ref/calendar — .ics file for the trip (owner only, via RLS).
 const ics = (d: string) => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: RouteContext<"/api/bookings
     `DTEND:${ics(g.lead.end_at)}`,
     `SUMMARY:${esc(`Elsasu van: ${tripTypeLabels[g.lead.trip_type]} (${g.lead.ref_code})`)}`,
     `LOCATION:${esc(from)}`,
-    `DESCRIPTION:${esc(`Pick-up: ${from}${to ? `\nDrop-off: ${to}` : ""}\nRef: ${g.lead.ref_code}\nHelp: ${site.phone}`)}`,
+    `DESCRIPTION:${esc(`Pick-up: ${from}${to ? `\nDrop-off: ${to}` : ""}\nRef: ${g.lead.ref_code}\nHelp: ${(await getBusiness()).phone}`)}`,
     "BEGIN:VALARM",
     "TRIGGER:-PT2H",
     "ACTION:DISPLAY",

@@ -1,6 +1,7 @@
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { formatGhanaPhone } from "@/lib/phone";
 import { site } from "@/lib/site";
+import { defaultBusiness, type Business } from "@/lib/business-defaults";
 
 // Every customer message in one place. SMS text, WhatsApp template parameters and email share the same facts.
 // WhatsApp business-initiated messages must use templates approved in Meta; names/params are listed in the README.
@@ -31,6 +32,8 @@ export type MessageContext = {
   vanPlate?: string | null;
   amount?: number; // payment or refund amount for this event
   trackingLink?: string | null;
+  /** Live contact details (Admin → Business); falls back to the defaults. */
+  business?: Business;
 };
 
 export type Message = {
@@ -44,6 +47,7 @@ const when = (iso: string) => formatDateTime(iso);
 const balanceNote = (c: MessageContext) => (c.balance > 0 ? ` Balance ${money(c.balance)} due before the trip.` : " Paid in full.");
 
 export function buildMessage(event: NotifyEvent, c: MessageContext): Message {
+  const biz = c.business ?? defaultBusiness;
   const hi = `Hi ${c.firstName}`;
   const driver = c.driverName ? `${c.driverName}${c.driverPhone ? ` (${formatGhanaPhone(c.driverPhone)})` : ""}` : "your driver";
   const sms = (() => {
@@ -65,7 +69,7 @@ export function buildMessage(event: NotifyEvent, c: MessageContext): Message {
       case "review_request":
         return `${hi}, how was your Elsasu trip ${c.ref}? Rate us in 10 seconds: ${c.link}`;
       case "booking_cancelled":
-        return `${hi}, booking ${c.ref} is cancelled.${c.amount ? ` Refund of ${money(c.amount)} goes back to your original payment method within 5–10 working days.` : ""} Questions? ${formatGhanaPhone(site.phone)}`;
+        return `${hi}, booking ${c.ref} is cancelled.${c.amount ? ` Refund of ${money(c.amount)} goes back to your original payment method within 5–10 working days.` : ""} Questions? ${formatGhanaPhone(biz.phone)}`;
     }
   })();
 
@@ -97,7 +101,7 @@ export function buildMessage(event: NotifyEvent, c: MessageContext): Message {
   return {
     sms,
     whatsapp: { template: `elsasu_${event}`, params: params[event] },
-    email: { subject: subjects[event], text: `${sms}\n\n${site.name} · ${formatGhanaPhone(site.phone)} · ${site.email}` },
+    email: { subject: subjects[event], text: `${sms}\n\n${site.name} · ${formatGhanaPhone(biz.phone)} · ${biz.email}` },
   };
 }
 

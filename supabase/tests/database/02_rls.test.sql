@@ -1,7 +1,7 @@
 -- Row-Level Security: who can see and change what. Run with: pnpm db:test
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(26);
 
 -- ── Setup (as postgres) ───────────────────────────────────────────────
 -- Two customers. Profiles are created by the on_auth_user_created trigger.
@@ -37,8 +37,12 @@ select is(
 set local role anon;
 set local request.jwt.claims to '{"role":"anon"}';
 
-select is((select count(*) from public.vehicles), 4::bigint, 'anon can browse the fleet');
-select is((select count(*) from public.pricing_rules), 14::bigint, 'anon can read active pricing');
+select is((select count(*) from public.vehicles), 6::bigint, 'anon can browse the fleet');
+select is((select count(*) from public.pricing_rules), 21::bigint, 'anon can read active pricing');
+select is((select count(*) from public.destination_prices), 30::bigint, 'anon can read destination prices');
+select is((select phone from public.business_settings), '+233545415019', 'anon can read business contact details');
+update public.business_settings set email = 'x@y.z';
+select is((select email from public.business_settings), 'bookings@elsasu.com', 'anon cannot change business details');
 select is((select count(*) from public.bookings), 0::bigint, 'anon sees no bookings');
 select is((select count(*) from public.promo_codes), 0::bigint, 'anon cannot list promo codes');
 select is((select count(*) from public.profiles), 0::bigint, 'anon sees no profiles');

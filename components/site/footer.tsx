@@ -4,6 +4,7 @@ import { Mail, Phone } from "lucide-react";
 import { Logo } from "@/components/site/logo";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { site } from "@/lib/site";
+import { getBusiness } from "@/lib/business";
 import { telLink, whatsappLink } from "@/lib/format";
 import { formatGhanaPhone } from "@/lib/phone";
 
@@ -20,6 +21,7 @@ const links = [
 export async function SiteFooter() {
   "use cache";
   cacheLife("days"); // keeps the © year current without reading the clock on every request
+  const business = await getBusiness();
   return (
     <footer data-floating-avoid className="bg-brand-ink text-white">
       <div className="mx-auto max-w-7xl px-4 py-6 pr-20 sm:px-6 sm:pr-24 lg:pr-6">
@@ -38,20 +40,20 @@ export async function SiteFooter() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <IconLink href={whatsappLink()} label="WhatsApp" external>
+            <IconLink href={whatsappLink(undefined, business.whatsapp)} label="WhatsApp" external>
               <WhatsAppIcon className="size-4" />
             </IconLink>
-            <IconLink href={telLink()} label={`Call ${formatGhanaPhone(site.phone)}`}>
+            <IconLink href={telLink(business.phone)} label={`Call ${formatGhanaPhone(business.phone)}`}>
               <Phone className="size-4" />
             </IconLink>
-            <IconLink href={`mailto:${site.email}`} label={`Email ${site.email}`}>
+            <IconLink href={`mailto:${business.email}`} label={`Email ${business.email}`}>
               <Mail className="size-4" />
             </IconLink>
           </div>
         </div>
 
         <div className="mt-5 flex flex-col gap-1 border-t border-white/10 pt-4 text-xs text-white/45 sm:flex-row sm:justify-between">
-          <p>© {new Date().getFullYear()} {site.name} · {site.address}</p>
+          <p>© {new Date().getFullYear()} {site.name} · {business.address}</p>
           <p>Secure payments by Paystack · MoMo & card</p>
         </div>
       </div>

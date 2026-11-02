@@ -30,7 +30,7 @@ export async function createBookingFromQuote(input: {
 }): Promise<Result<{ leadId: string; ref: string; total: number; deposit: number }>> {
   const payload = verifyQuoteToken<QuotePayload>(input.quoteToken);
   if (!payload) return { ok: false, status: 410, error: "Your price has expired. We've refreshed it — please check and try again." };
-  if (!payload.available) return { ok: false, status: 409, error: "Those vans are no longer free at that time. Please pick another time." };
+  if (!payload.available) return { ok: false, status: 409, error: "Those vehicles are no longer free at that time. Please pick another time." };
 
   const { quote, request } = payload;
   const [destinations, addons] = await Promise.all([getDestinations(), getAddons()]);
@@ -79,7 +79,7 @@ export async function createBookingFromQuote(input: {
 
   if (error) {
     if (error.message.includes("NO_VAN_AVAILABLE")) {
-      return { ok: false, status: 409, error: "Sorry, those vans were just booked. Please pick another time." };
+      return { ok: false, status: 409, error: "Sorry, those vehicles were just booked. Please pick another time." };
     }
     console.error("[booking] create failed", error.message);
     return { ok: false, status: 500, error: "We couldn't save your booking. Please try again." };

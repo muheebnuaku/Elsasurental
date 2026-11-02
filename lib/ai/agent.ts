@@ -7,13 +7,14 @@ import { quoteTrip } from "@/lib/pricing/quote-trip";
 import { tripRequestSchema, type TripRequest } from "@/lib/validators/trip";
 import { searchKnowledge } from "@/lib/ai/knowledge";
 import { whatsappLink } from "@/lib/format";
+import { getBusiness } from "@/lib/business";
 import { tripTypeLabels } from "@/lib/content";
 import { bookingRules, site } from "@/lib/site";
 
 // One agent for web chat now and WhatsApp in Phase 2. Tools call real internal functions only.
 
 export function agentInstructions(now = new Date()) {
-  return `You are Ama, the booking assistant for ${site.name}, a Ghanaian company renting 8- and 14-seater minivans, always with a professional driver, anywhere in Ghana.
+  return `You are Ama, the booking assistant for ${site.name}, a Ghanaian company hiring out minivans (8 and 14 seats) and 7-seater SUVs (e.g. Toyota Highlander, Acura), always with a professional Elsasu driver, anywhere in Ghana. Self-drive is never offered.
 
 How you talk
 - Warm, friendly and concise, in Ghanaian English. You understand Pidgin and simple Twi phrases; reply in English unless the customer clearly prefers otherwise.
@@ -31,7 +32,7 @@ Hard rules
 What get_quote needs
 - trip type, pick-up place, date, time, number of passengers. For outstation trips also the destination; for half/full-day or events, roughly how many hours.
 - If the customer says "tomorrow", "Saturday" etc., convert it to a date using today's date below.
-- Passengers decide the van: 1-8 → 8-seater, 9-14 → 14-seater, more → several vans. Don't ask which van unless they have a preference.
+- Passengers decide the van: 1-8 → 8-seater, 9-14 → 14-seater, more → several vans. Don't ask which vehicle unless they have a preference. If they want an SUV (executive, VIP, fewer people, more comfort), pass its slug as vehicleTypeSlug.
 
 After a quote
 - Give the total and the ${bookingRules.depositPct}% deposit, mention what's included in one line, and note anything from the quote notes.
@@ -110,7 +111,7 @@ export const agentTools = {
     description: "Search Elsasu's FAQs and policies (cancellation, deposits, what's included, contact, services).",
     inputSchema: z.object({ query: z.string().min(2).max(200) }),
     execute: async ({ query }) => {
-      const hits = searchKnowledge(query);
+      const hits = searchKnowledge(query, 3, await getBusiness());
       return hits.length ? hits : { result: "Nothing found. Offer to connect the customer with a human." };
     },
   }),
@@ -124,12 +125,14 @@ export const agentTools = {
       if (!result.ok) return { error: result.error };
       const { quote, request, available } = result.data;
       if (!available) return { error: "Not enough vans free at that time. Suggest another time or a human." };
+      const business = await getBusiness();
       return {
         bookingLink: bookingLink(request, customerName),
         total: `GHS ${quote.total}`,
         deposit: `GHS ${quote.deposit}`,
         whatsapp: whatsappLink(
           `Hi Elsasu, I'm ${customerName}. I'd like to book: ${tripTypeLabels[quote.tripType]}, ${quote.passengers} passengers, from ${request.pickup}${request.dropoff ? ` to ${request.dropoff}` : ""}, ${request.date} at ${request.time}. Quoted GHS ${quote.total}.`,
+          business.whatsapp,
         ),
         note: "Booking is confirmed only after the deposit is paid.",
       };
@@ -139,10 +142,13 @@ export const agentTools = {
   handoff_to_human: tool({
     description: "Connect the customer with a human at Elsasu (WhatsApp/phone). Use for complaints, refunds, changes to existing bookings, or when unsure.",
     inputSchema: z.object({ reason: z.string().max(300) }),
-    execute: async ({ reason }) => ({
-      whatsapp: whatsappLink(`Hi Elsasu, I was chatting with your assistant and need help: ${reason}`),
-      phone: site.phone,
-      message: "A team member will reply on WhatsApp, usually within minutes during the day.",
-    }),
+    execute: async ({ reason }) => {
+      const business = await getBusiness();
+      return {
+        whatsapp: whatsappLink(`Hi Elsasu, I was chatting with your assistant and need help: ${reason}`, business.whatsapp),
+        phone: business.phone,
+        message: "A team member will reply on WhatsApp, usually within minutes during the day.",
+      };
+    },
   }),
 };

@@ -15,9 +15,9 @@ export function formatHours(hours: number) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-/** wa.me link with an optional prefilled message. */
-export function whatsappLink(message?: string) {
-  const number = site.whatsapp.replace(/[^0-9]/g, "");
+/** wa.me link with an optional prefilled message. Pass the live number (getBusiness / useBusiness). */
+export function whatsappLink(message?: string, to: string = site.whatsapp) {
+  const number = to.replace(/[^0-9]/g, "");
   return `https://wa.me/${number}${message ? `?text=${encodeURIComponent(message)}` : ""}`;
 }
 

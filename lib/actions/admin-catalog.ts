@@ -126,8 +126,6 @@ const destSchema = z.object({
   id: z.guid().or(z.literal("")),
   name: z.string().trim().min(2).max(60),
   region: z.string().trim().min(2).max(40),
-  price_8_seater: money,
-  price_14_seater: money,
   est_hours: z.coerce.number().min(0.25).max(24),
   distance_km: z.union([z.literal(""), z.coerce.number().int().min(0).max(2000)]),
   image_url: z.union([z.literal(""), z.string().url().max(500)]),
@@ -138,11 +136,40 @@ export async function saveDestination(_prev: AdminResult | null, formData: FormD
   const { supabase } = await requireAdmin();
   const parsed = destSchema.safeParse({ ...Object.fromEntries(formData), active: formData.get("active") ?? "" });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the destination.");
+
+  // "price:<vehicle_type_id>" fields; an empty box means that vehicle doesn't go there.
+  const prices: { vehicle_type_id: string; price: number }[] = [];
+  const cleared: string[] = [];
+  for (const [key, value] of formData) {
+    if (!key.startsWith("price:")) continue;
+    const typeId = z.guid().safeParse(key.slice(6));
+    if (!typeId.success) return fail("Check the prices.");
+    if (String(value).trim() === "") {
+      cleared.push(typeId.data);
+      continue;
+    }
+    const price = money.safeParse(value);
+    if (!price.success) return fail("Check the prices.");
+    prices.push({ vehicle_type_id: typeId.data, price: price.data });
+  }
+  if (!prices.length) return fail("Add a price for at least one vehicle.");
+
   const { id, active, distance_km, image_url, ...d } = parsed.data;
   const row = { ...d, distance_km: distance_km === "" ? null : distance_km, image_url: image_url || null, active: active === "on" };
   const slug = d.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const { error } = id ? await supabase.from("destinations").update(row).eq("id", id) : await supabase.from("destinations").insert({ ...row, slug });
-  return error ? fail(error.code === "23505" ? "That destination already exists." : "Couldn't save the destination.") : done("Destination saved.");
+  const saved = id
+    ? await supabase.from("destinations").update(row).eq("id", id).select("id").single()
+    : await supabase.from("destinations").insert({ ...row, slug }).select("id").single();
+  if (saved.error) return fail(saved.error.code === "23505" ? "That destination already exists." : "Couldn't save the destination.");
+
+  const destinationId = saved.data.id;
+  const { error } = await supabase
+    .from("destination_prices")
+    .upsert(prices.map((p) => ({ ...p, destination_id: destinationId })));
+  if (!error && cleared.length) {
+    await supabase.from("destination_prices").delete().eq("destination_id", destinationId).in("vehicle_type_id", cleared);
+  }
+  return error ? fail("Saved the destination, but not its prices. Try again.") : done("Destination saved.");
 }
 
 // ── Add-ons ───────────────────────────────────────────────────────────

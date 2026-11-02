@@ -10,6 +10,7 @@ import { Section, SectionHeading } from "@/components/site/section";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { faqs } from "@/lib/content";
 import { site } from "@/lib/site";
+import { getBusiness } from "@/lib/business";
 import { stockPhotos } from "@/lib/stock-photos";
 import { telLink, whatsappLink } from "@/lib/format";
 import { formatGhanaPhone } from "@/lib/phone";
@@ -33,7 +34,8 @@ const jump = [
 ];
 
 // TODO(confirm): replace the story with the owner's own words, founding year and real photos.
-export default function AboutPage() {
+export default async function AboutPage() {
+  const business = await getBusiness();
   const half = Math.ceil(faqs.length / 2);
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -72,7 +74,7 @@ export default function AboutPage() {
                 retreats, weddings, funerals, team offsites.
               </p>
               <p>
-                So we run 8- and 14-seater vans, each with a friendly professional driver, and made booking as easy
+                So we run minivans and SUVs, each with a friendly professional driver, and made booking as easy
                 as a WhatsApp message: instant price for any route, pay with MoMo, watch your van arrive.
               </p>
             </div>
@@ -123,7 +125,7 @@ export default function AboutPage() {
         <SectionHeading eyebrow="Contact" title="Talk to a real person" intro="We reply fast, 7 days a week." />
         <div className="grid gap-3 sm:grid-cols-3">
           <a
-            href={whatsappLink("Hi Elsasu, I have a question.")}
+            href={whatsappLink("Hi Elsasu, I have a question.", business.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-4 rounded-2xl bg-[#25D366] p-4 text-white transition-transform hover:-translate-y-0.5 sm:flex-col sm:items-start sm:p-5"
@@ -135,14 +137,14 @@ export default function AboutPage() {
             </div>
             <ArrowRight className="size-5 transition-transform group-hover:translate-x-0.5 sm:hidden" />
           </a>
-          <ContactCard href={telLink()} icon={Phone} title="Call us" body={formatGhanaPhone(site.phone)} />
-          <ContactCard href={`mailto:${site.email}`} icon={Mail} title="Email" body={site.email} />
+          <ContactCard href={telLink(business.phone)} icon={Phone} title="Call us" body={formatGhanaPhone(business.phone)} />
+          <ContactCard href={`mailto:${business.email}`} icon={Mail} title="Email" body={business.email} />
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <Info icon={Clock} title="Hours">Online bookings 24/7 · office 7am–9pm daily</Info>
-          <Info icon={MapPin} title="Based in">{site.address} · we serve all 16 regions</Info>
+          <Info icon={MapPin} title="Based in">{business.address} · we serve all 16 regions</Info>
           <Info icon={Building2} title="Companies">
-            <a href={`mailto:${site.email}?subject=Corporate%20account`} className="font-semibold text-foreground underline-offset-4 hover:underline">
+            <a href={`mailto:${business.email}?subject=Corporate%20account`} className="font-semibold text-foreground underline-offset-4 hover:underline">
               Ask about a corporate account
             </a>
           </Info>

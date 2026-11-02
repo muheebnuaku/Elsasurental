@@ -7,10 +7,12 @@ import { CalendarCheck, MessageCircle } from "lucide-react";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { CHAT_STATE_EVENT, openChat } from "@/components/chat/chat-widget";
 import { whatsappLink } from "@/lib/format";
+import { useBusiness } from "@/components/business-provider";
 import { cn } from "@/lib/utils";
 
 /** Bottom-right stack on every screen: WhatsApp, Ask (assistant), Book. Hidden while the chat is open. */
 export function FloatingActions() {
+  const business = useBusiness();
   const pathname = usePathname();
   const [chatOpen, setChatOpen] = useState(false);
   const [covering, setCovering] = useState(false);
@@ -66,7 +68,7 @@ export function FloatingActions() {
     >
       <Action label="WhatsApp us">
         <a
-          href={whatsappLink("Hi Elsasu, I'd like to book a van.")}
+          href={whatsappLink("Hi Elsasu, I'd like to make a booking.", business.whatsapp)}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="WhatsApp us"

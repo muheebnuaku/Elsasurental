@@ -1,15 +1,19 @@
--- Production starter catalogue: van types, prices, destinations, add-ons.
--- Run ONCE on the live database (Supabase dashboard → SQL Editor → paste → Run).
--- Safe to re-run: existing rows are left alone. No test users, bookings or vans.
--- Copied from seed.sql (keep the two in sync). Add real vans in Admin → Fleet.
+-- Starter catalogue: vehicle types, prices, destinations, add-ons. No test users, bookings or vehicles.
+-- Live database: Supabase dashboard → SQL Editor → paste ALL of this file → Run.
+-- Safe to re-run: rows that already exist are left alone, so running it again only adds what's new
+-- (e.g. the 7-seater SUV type and its prices). Local `pnpm db:reset` loads it before seed.sql.
+-- Add real vehicles (with plates) in Admin → Fleet.
 -- TODO(confirm): every price is a placeholder. Set real ones in Admin → Pricing.
 
 -- ── Vehicle types ─────────────────────────────────────────────────────
-insert into public.vehicle_types (id, slug, name, seats, luggage_capacity, description, sort_order) values
-  ('10000000-0000-0000-0000-000000000008', '8-seater', '8-Seater Minivan', 8, 6,
+-- category "van": suggested automatically by group size. "suv": only when the customer chooses it.
+insert into public.vehicle_types (id, slug, name, category, seats, luggage_capacity, description, sort_order) values
+  ('10000000-0000-0000-0000-000000000008', '8-seater', '8-Seater Minivan', 'van', 8, 6,
    'Comfortable air-conditioned minivan for families, small groups and airport runs.', 1),
-  ('10000000-0000-0000-0000-000000000014', '14-seater', '14-Seater Minivan', 14, 10,
-   'Spacious van for church groups, weddings, funerals, tours and staff shuttles.', 2)
+  ('10000000-0000-0000-0000-000000000014', '14-seater', '14-Seater Minivan', 'van', 14, 10,
+   'Spacious van for church groups, weddings, funerals, tours and staff shuttles.', 2),
+  ('10000000-0000-0000-0000-000000000007', '7-seater-suv', '7-Seater SUV', 'suv', 7, 4,
+   'Toyota Highlander, Acura or similar. Executive comfort for visitors, VIPs and smaller groups, always with a driver.', 3)
 on conflict (slug) do nothing;
 
 -- ── Pricing rules (placeholders, GHS) ─────────────────────────────────
@@ -33,22 +37,50 @@ values
   ('10000000-0000-0000-0000-000000000014', 'multi_day',         2650, 250, 10, 10, 170, 15),
   ('10000000-0000-0000-0000-000000000014', 'outstation',        2100, 150, 10, 11, 170, 15),
   ('10000000-0000-0000-0000-000000000014', 'event',             2300, 100,  8, 10, 180, 15),
-  ('10000000-0000-0000-0000-000000000014', 'corporate_shuttle', 1300,  60,  4, 10, 160, 10)
+  ('10000000-0000-0000-0000-000000000014', 'corporate_shuttle', 1300,  60,  4, 10, 160, 10),
+  -- 7-seater SUV
+  ('10000000-0000-0000-0000-000000000007', 'airport',            900,  40,  2,  9, 150, 15),
+  ('10000000-0000-0000-0000-000000000007', 'half_day',          1500, 100,  5,  9, 150, 15),
+  ('10000000-0000-0000-0000-000000000007', 'full_day',          2500, 200, 10,  9, 150, 15),
+  ('10000000-0000-0000-0000-000000000007', 'multi_day',         2400, 250, 10,  9, 150, 15),
+  ('10000000-0000-0000-0000-000000000007', 'outstation',        1800, 150, 10, 10, 150, 15),
+  ('10000000-0000-0000-0000-000000000007', 'event',             2000, 100,  8,  9, 160, 15),
+  ('10000000-0000-0000-0000-000000000007', 'corporate_shuttle', 1100,  60,  4,  9, 140, 10)
 on conflict (vehicle_type_id, trip_type) where active do nothing;
 
--- ── Outstation destinations from Accra (placeholder prices, same-day return) ──
-insert into public.destinations (slug, name, region, price_8_seater, price_14_seater, est_hours, distance_km, lat, lng, description) values
-  ('aburi',      'Aburi',          'Eastern',       1400, 2000, 1.0,  40, 5.8486, -0.1750, 'Botanical gardens and cool mountain air, an easy day out from Accra.'),
-  ('shai-hills', 'Shai Hills',     'Greater Accra', 1400, 2000, 1.0,  55, 5.8960,  0.0630, 'Wildlife reserve with baboons, antelope and caves.'),
-  ('akosombo',   'Akosombo',       'Eastern',       2000, 2900, 2.0, 105, 6.2950,  0.0560, 'Volta Lake, the dam and boat cruises.'),
-  ('ada',        'Ada',            'Greater Accra', 2100, 3000, 2.0, 115, 5.7830,  0.6330, 'Beaches, river estuary and resorts at Ada Foah.'),
-  ('cape-coast', 'Cape Coast',     'Central',       2600, 3700, 3.0, 145, 5.1053, -1.2466, 'Cape Coast Castle and the historic coast.'),
-  ('elmina',     'Elmina',         'Central',       2700, 3800, 3.3, 160, 5.0847, -1.3509, 'Elmina Castle and the fishing harbour.'),
-  ('kakum',      'Kakum National Park', 'Central',  2800, 3900, 3.5, 170, 5.3500, -1.3830, 'Canopy walkway through the rainforest.'),
-  ('ho',         'Ho',             'Volta',         2900, 4100, 3.5, 160, 6.6000,  0.4700, 'Gateway to Volta Region waterfalls and mountains.'),
-  ('takoradi',   'Takoradi',       'Western',       3600, 5000, 4.5, 230, 4.8980, -1.7600, 'Twin city Sekondi-Takoradi and Western Region beaches.'),
-  ('kumasi',     'Kumasi',         'Ashanti',       4200, 5900, 5.0, 250, 6.6885, -1.6244, 'The Garden City: Manhyia Palace, Kejetia and the Ashanti heartland.')
+-- ── Outstation destinations from Accra (same-day return) ──────────────
+insert into public.destinations (slug, name, region, est_hours, distance_km, lat, lng, description) values
+  ('aburi',      'Aburi',          'Eastern',       1.0,  40, 5.8486, -0.1750, 'Botanical gardens and cool mountain air, an easy day out from Accra.'),
+  ('shai-hills', 'Shai Hills',     'Greater Accra', 1.0,  55, 5.8960,  0.0630, 'Wildlife reserve with baboons, antelope and caves.'),
+  ('akosombo',   'Akosombo',       'Eastern',       2.0, 105, 6.2950,  0.0560, 'Volta Lake, the dam and boat cruises.'),
+  ('ada',        'Ada',            'Greater Accra', 2.0, 115, 5.7830,  0.6330, 'Beaches, river estuary and resorts at Ada Foah.'),
+  ('cape-coast', 'Cape Coast',     'Central',       3.0, 145, 5.1053, -1.2466, 'Cape Coast Castle and the historic coast.'),
+  ('elmina',     'Elmina',         'Central',       3.3, 160, 5.0847, -1.3509, 'Elmina Castle and the fishing harbour.'),
+  ('kakum',      'Kakum National Park', 'Central',  3.5, 170, 5.3500, -1.3830, 'Canopy walkway through the rainforest.'),
+  ('ho',         'Ho',             'Volta',         3.5, 160, 6.6000,  0.4700, 'Gateway to Volta Region waterfalls and mountains.'),
+  ('takoradi',   'Takoradi',       'Western',       4.5, 230, 4.8980, -1.7600, 'Twin city Sekondi-Takoradi and Western Region beaches.'),
+  ('kumasi',     'Kumasi',         'Ashanti',       5.0, 250, 6.6885, -1.6244, 'The Garden City: Manhyia Palace, Kejetia and the Ashanti heartland.')
 on conflict (slug) do nothing;
+
+-- Fixed price per destination and vehicle type (placeholders, GHS).
+insert into public.destination_prices (destination_id, vehicle_type_id, price)
+select d.id, vt.id, v.price
+  from (values
+    ('aburi',      1400, 2000, 1700),
+    ('shai-hills', 1400, 2000, 1700),
+    ('akosombo',   2000, 2900, 2400),
+    ('ada',        2100, 3000, 2500),
+    ('cape-coast', 2600, 3700, 3100),
+    ('elmina',     2700, 3800, 3200),
+    ('kakum',      2800, 3900, 3300),
+    ('ho',         2900, 4100, 3400),
+    ('takoradi',   3600, 5000, 4200),
+    ('kumasi',     4200, 5900, 4900)
+  ) as p(slug, van8, van14, suv7)
+ cross join lateral (values ('8-seater', p.van8), ('14-seater', p.van14), ('7-seater-suv', p.suv7)) as v(type_slug, price)
+  join public.destinations d on d.slug = p.slug
+  join public.vehicle_types vt on vt.slug = v.type_slug
+on conflict (destination_id, vehicle_type_id) do nothing;
 
 -- ── Add-ons (placeholders) ────────────────────────────────────────────
 insert into public.addons (slug, name, description, price, unit) values

@@ -21,7 +21,7 @@ export default async function FleetAdminPage() {
   await connection();
   const supabase = await createClient();
   const [{ data: types }, { data: vehicles }, { data: drivers }] = await Promise.all([
-    supabase.from("vehicle_types").select("id, name, seats").order("sort_order"),
+    supabase.from("vehicle_types").select("id, name, seats, category").order("sort_order"),
     supabase.from("vehicles").select("*").order("name"),
     supabase.from("drivers").select("id, licence_no, licence_expiry, is_active, rating, profiles(full_name, phone)").order("created_at"),
   ]);
@@ -33,12 +33,12 @@ export default async function FleetAdminPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Fleet</h1>
 
-      <Panel title={`Vans (${vehicles?.length ?? 0})`}>
+      <Panel title={`Vehicles (${vehicles?.length ?? 0})`}>
         <ul className="grid gap-3 md:grid-cols-2">
           {(vehicles ?? []).map((v) => (
             <li key={v.id} className="overflow-hidden rounded-xl border">
               <div className="flex gap-3 p-3">
-                <VanPhoto photos={v.photos} seats={seatsOf(v.type_id)} alt={v.name} className="aspect-[4/3] w-24 shrink-0 rounded-lg" sizes="96px" />
+                <VanPhoto photos={v.photos} seats={seatsOf(v.type_id)} category={types?.find((t) => t.id === v.type_id)?.category} alt={v.name} className="aspect-[4/3] w-24 shrink-0 rounded-lg" sizes="96px" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold">{v.name}</p>

@@ -12,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           { href: "/admin/calendar", label: "Calendar" },
           { href: "/admin/fleet", label: "Fleet" },
           { href: "/admin/pricing", label: "Pricing" },
+          { href: "/admin/business", label: "Business" },
         ]}>
         {children}
       </AreaGate>

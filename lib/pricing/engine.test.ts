@@ -3,6 +3,7 @@ import { allocateVans, getQuote, isNight, QuoteError, type PricingCatalog } from
 
 const v8 = { id: "t8", slug: "8-seater", name: "8-Seater", seats: 8 };
 const v14 = { id: "t14", slug: "14-seater", name: "14-Seater", seats: 14 };
+const suv = { id: "t7", slug: "7-seater-suv", name: "7-Seater SUV", seats: 7, category: "suv" };
 
 const rule = (vehicle_type_id: string, trip_type: PricingCatalog["rules"][number]["trip_type"], base: number) => ({
   vehicle_type_id,
@@ -16,8 +17,10 @@ const rule = (vehicle_type_id: string, trip_type: PricingCatalog["rules"][number
 });
 
 const catalog: PricingCatalog = {
-  vanTypes: [v14, v8],
+  vanTypes: [v14, v8, suv],
   rules: [
+    rule("t7", "half_day", 1400),
+    rule("t7", "outstation", 2000),
     rule("t8", "half_day", 1000),
     rule("t14", "half_day", 1500),
     rule("t8", "multi_day", 800),
@@ -25,7 +28,8 @@ const catalog: PricingCatalog = {
     rule("t14", "outstation", 1800),
   ],
   destinations: [
-    { slug: "cape-coast", name: "Cape Coast", price_8_seater: 2600, price_14_seater: 3700, est_hours: 3, distance_km: 145 },
+    { slug: "cape-coast", name: "Cape Coast", prices: { t8: 2600, t14: 3700, t7: 3200 }, est_hours: 3, distance_km: 145 },
+    { slug: "ho", name: "Ho", prices: { t8: 2900, t14: 4100 }, est_hours: 3.5, distance_km: 160 },
   ],
   addons: [
     { id: "a1", slug: "extra-stop", name: "Extra stop", price: 50, unit: "per_item" },
@@ -52,6 +56,13 @@ describe("allocateVans", () => {
 
   it("respects a forced van size", () => {
     expect(allocateVans(10, catalog.vanTypes, "8-seater").map((v) => v.seats)).toEqual([8, 8]);
+  });
+
+  it("never picks an SUV unless it was chosen", () => {
+    expect(allocateVans(5, catalog.vanTypes).map((v) => v.slug)).toEqual(["8-seater"]);
+    expect(allocateVans(7, catalog.vanTypes).map((v) => v.slug)).toEqual(["8-seater"]);
+    expect(allocateVans(5, catalog.vanTypes, "7-seater-suv").map((v) => v.slug)).toEqual(["7-seater-suv"]);
+    expect(allocateVans(10, catalog.vanTypes, "7-seater-suv").map((v) => v.slug)).toEqual(["7-seater-suv", "7-seater-suv"]);
   });
 
   it("rejects bad input", () => {
@@ -96,6 +107,17 @@ describe("getQuote", () => {
     expect(big.total).toBe(3700);
     expect(small.included.km).toBeNull();
     expect(small.included.hours).toBe(10); // 3h each way + 4h there
+  });
+
+  it("uses each vehicle type's own destination price", () => {
+    const q = getQuote({ tripType: "outstation", passengers: 4, startAt: day, destinationSlug: "cape-coast", vehicleTypeSlug: "7-seater-suv" }, catalog, opts);
+    expect(q.total).toBe(3200);
+  });
+
+  it("explains when a destination has no price for the chosen vehicle", () => {
+    expect(() =>
+      getQuote({ tripType: "outstation", passengers: 4, startAt: day, destinationSlug: "ho", vehicleTypeSlug: "7-seater-suv" }, catalog, opts),
+    ).toThrow(/No fixed price to Ho for the 7-Seater SUV/);
   });
 
   it("prices every van for big groups", () => {

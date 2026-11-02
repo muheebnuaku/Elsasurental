@@ -105,7 +105,11 @@ export function HeroJourney({ className }: { className?: string }) {
 
   return (
     <div className={cn("relative select-none", className)} aria-hidden>
-      <svg viewBox="0 0 640 256" className="h-auto w-full overflow-visible">
+      {/* edges fade to transparent (a mask, not a dark overlay) so the scene blends into any background */}
+      <svg
+        viewBox="0 0 640 256"
+        className="h-auto w-full [mask-image:linear-gradient(to_right,transparent,#000_7%,#000_93%,transparent)]"
+      >
         <defs>
           <linearGradient id="hj-road" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stopColor="#2a2a2a" />
@@ -114,12 +118,6 @@ export function HeroJourney({ className }: { className?: string }) {
           <linearGradient id="hj-beam" x1="0" x2="1">
             <stop offset="0" stopColor="#fde68a" stopOpacity="0.55" />
             <stop offset="1" stopColor="#fde68a" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="hj-edges" x1="0" x2="1">
-            <stop offset="0" stopColor="var(--brand-ink)" />
-            <stop offset="0.08" stopColor="var(--brand-ink)" stopOpacity="0" />
-            <stop offset="0.92" stopColor="var(--brand-ink)" stopOpacity="0" />
-            <stop offset="1" stopColor="var(--brand-ink)" />
           </linearGradient>
           <radialGradient id="hj-sun">
             <stop offset="0" stopColor="var(--brand-orange)" stopOpacity="0.4" />
@@ -210,8 +208,6 @@ export function HeroJourney({ className }: { className?: string }) {
         {/* speech-bubble moments */}
         <Bubble progress={progress} x={AT_PICKUP + VAN_W * 0.82} y={VAN_Y - 30} text="+5 aboard" times={[0, T.boardEnd - 0.03, T.boardEnd, T.depart, T.depart + 0.03, 1]} />
         <Bubble progress={progress} x={AT_DEST + VAN_W * 0.5} y={VAN_Y - 32} text="Arrived ✓" times={[0, T.alightEnd - 0.04, T.alightEnd - 0.01, T.fade - 0.02, T.fade, 1]} />
-
-        <rect x="-20" y="0" width="680" height="256" fill="url(#hj-edges)" pointerEvents="none" />
       </svg>
 
       {/* captions, one per step */}

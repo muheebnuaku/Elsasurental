@@ -19,6 +19,7 @@ export function FleetCard({ type, priority = false }: { type: FleetType; priorit
         <VanPhoto
           photos={photos}
           seats={type.seats}
+          category={type.category}
           alt={type.name}
           priority={priority}
           sizes="(min-width: 768px) 45vw, 100vw"

@@ -24,7 +24,7 @@ export type QuoteTripResult = { ok: true; data: TripQuote } | { ok: false; error
 async function loadCatalog(): Promise<PricingCatalog> {
   const [fleet, destinations, addons] = await Promise.all([getFleet(), getDestinations(), getAddons()]);
   return {
-    vanTypes: fleet.map((t) => ({ id: t.id, slug: t.slug, name: t.name, seats: t.seats })),
+    vanTypes: fleet.map((t) => ({ id: t.id, slug: t.slug, name: t.name, seats: t.seats, category: t.category })),
     rules: fleet.flatMap((t) => t.pricing),
     destinations,
     addons,
@@ -113,7 +113,7 @@ export async function quoteTrip(req: TripRequest, now = new Date()): Promise<Quo
   const end = new Date(start.getTime() + hours * 3600_000);
 
   const available = fits(quote.vans, await getAvailability(start, end));
-  if (!available) quote.notes.push("We may not have enough vans free at that time. Try another time or chat with us.");
+  if (!available) quote.notes.push("We may not have enough vehicles free at that time. Try another time or chat with us.");
 
   const request: TripRequest = { ...req, tripType, destinationSlug };
   const data = {

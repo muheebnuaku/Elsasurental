@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { cn } from "@/lib/utils";
 import { whatsappLink } from "@/lib/format";
+import { useBusiness } from "@/components/business-provider";
 import { track } from "@/lib/analytics/client";
 
 export const OPEN_CHAT_EVENT = "elsasu:open-chat";
@@ -27,6 +28,7 @@ const suggestions = [
 ];
 
 export function ChatWidget() {
+  const business = useBusiness();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   // Conversation id is created on the first send (never during server prerender).
@@ -123,7 +125,7 @@ export function ChatWidget() {
             {error && (
               <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
                 <p>Sorry, I can&apos;t answer right now. Our team can help on WhatsApp.</p>
-                <a href={whatsappLink("Hi Elsasu, I'd like help with a booking.")} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 font-semibold text-[#128C4B]">
+                <a href={whatsappLink("Hi Elsasu, I'd like help with a booking.", business.whatsapp)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 font-semibold text-[#128C4B]">
                   <WhatsAppIcon className="size-4" /> Chat on WhatsApp
                 </a>
               </div>
@@ -189,7 +191,7 @@ type HandoffOut = { whatsapp?: string; phone?: string };
 
 const toolLabels: Record<string, string> = {
   get_quote: "Calculating your price…",
-  check_availability: "Checking which vans are free…",
+  check_availability: "Checking what's free…",
   list_destinations: "Looking up destinations…",
   search_knowledge_base: "Checking our policies…",
   prepare_booking: "Preparing your booking…",
@@ -243,7 +245,7 @@ function QuoteCard({ q }: { q: QuoteOut }) {
       <ul className="space-y-1 px-4 py-3 text-sm text-muted-foreground">
         {q.lines?.map((l) => <li key={l}>{l}</li>)}
       </ul>
-      {q.available === false && <p className="px-4 pb-2 text-sm font-medium text-destructive">Vans may be fully booked then.</p>}
+      {q.available === false && <p className="px-4 pb-2 text-sm font-medium text-destructive">We may be fully booked then.</p>}
       {q.bookingLink && (
         <div className="px-4 pb-4">
           <Button asChild variant="accent" size="xl" className="h-11 w-full">

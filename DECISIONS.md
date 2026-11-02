@@ -187,3 +187,30 @@ Important choices and why. Newest at the bottom of each section.
   replaced by `dataCollection`.
 - **Verified locally** with a stand-in collector: browser error through the tunnel, the full funnel linked to one
   customer, and no phone numbers, names, cookies or page text in any payload.
+
+## Post-launch round (Nov 2026): Google sign-in, installable app, SUVs, terms
+
+- **Google sign-in sits next to phone codes, it doesn't replace them.** Bookings need a verified phone (the
+  booking API trusts `profiles.phone`), so a Google account confirms a number once at checkout with
+  `updateUser({ phone })` + a `phone_change` code. That keeps one account with both identities. If the number
+  already has its own account, checkout continues as that account. The Google button appears only when the
+  provider is switched on in Supabase (read from `/auth/v1/settings`), so the page never shows a broken button.
+- **"Confirm phone" must be on** (config.toml and the dashboard). Without it Supabase sets a new phone without a
+  code and marks it confirmed, which would let anyone claim another person's number and their phone bookings.
+- **Profile phone is locked.** `protect_profile_columns` now also blocks customers changing `phone`; only the
+  verified-phone sync trigger (or an admin) writes it.
+- **Vehicle categories.** `vehicle_types.category` is `van` or `suv`. Automatic sizing (pricing engine, home
+  quick quote, AI assistant) only picks vans; an SUV is used when the customer chooses it (fleet page or the
+  booking form's Vehicle choice). New types (e.g. Land Cruiser) need no code changes.
+- **Destination prices per vehicle type** (`destination_prices`) replace the two hard-coded 8/14-seater columns.
+  A destination without a price for the chosen vehicle returns a clear "message us" error instead of guessing.
+- **One catalogue file.** `supabase/production-catalog.sql` is loaded before `seed.sql` locally and pasted into
+  the live SQL editor; it's idempotent, so re-running it adds only new rows.
+- **Terms written for visitors from abroad:** plain-English summary, refund table with a worked example, GH₵
+  charging and exchange-rate differences, waiting time and no-shows, conduct, damage, delays outside our control,
+  liability cap, Ghanaian law. Policy numbers come from `lib/site.ts`, so the terms, FAQ and refund code can't
+  disagree. Customers accept the terms next to the Pay button. Still needs a Ghanaian lawyer's review.
+- **Installable app:** `app/manifest.ts` + icons (no service worker, so nothing is cached stale). "Install the app"
+  in the menu uses the browser prompt on Android/desktop Chrome and shows the two Share steps on iPhone.
+- **Landing animation runs on one clock** (`useAnimationFrame` → `progress` → `useTransform`). Separate repeating
+  animations started at different moments and drifted apart; in production some never started.

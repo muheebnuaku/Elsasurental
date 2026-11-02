@@ -6,8 +6,10 @@ import * as Sentry from "@sentry/nextjs";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { whatsappLink } from "@/lib/format";
+import { useBusiness } from "@/components/business-provider";
 
 export default function ErrorPage({ error, retry }: { error: unknown; retry: () => void }) {
+  const business = useBusiness();
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -23,7 +25,7 @@ export default function ErrorPage({ error, retry }: { error: unknown; retry: () 
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         <Button variant="accent" onClick={() => retry()}><RotateCcw /> Try again</Button>
         <Button variant="outline" asChild><Link href="/">Home</Link></Button>
-        <Button variant="outline" asChild><a href={whatsappLink("Hi Elsasu, a page on your website didn't load for me.")} target="_blank" rel="noreferrer">WhatsApp us</a></Button>
+        <Button variant="outline" asChild><a href={whatsappLink("Hi Elsasu, a page on your website didn't load for me.", business.whatsapp)} target="_blank" rel="noreferrer">WhatsApp us</a></Button>
       </div>
       {digest && <p className="mt-2 font-mono text-[11px] text-muted-foreground">Error code {digest}</p>}
     </main>

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/legal";
 import { site } from "@/lib/site";
+import { getBusiness } from "@/lib/business";
 
 export const metadata: Metadata = { title: "Privacy policy" };
 
 // TODO(confirm): register with the Data Protection Commission and have this reviewed before launch.
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const business = await getBusiness();
   return (
     <LegalPage title="Privacy policy" updated="1 November 2026">
       <section>
@@ -41,7 +43,7 @@ export default function PrivacyPage() {
         <h2>Your rights</h2>
         <p>
           You can ask to see, correct or delete your personal data at any time, and you can delete your account
-          from your account page. Contact <a href={`mailto:${site.email}`}>{site.email}</a>.
+          from your account page. Contact <a href={`mailto:${business.email}`}>{business.email}</a>.
         </p>
       </section>
     </LegalPage>
