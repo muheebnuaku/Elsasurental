@@ -1,6 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifySafe, type NotifyEvent } from "@/lib/notifications";
+import { sendDriverDigests } from "@/lib/notifications/driver";
+import { reportError } from "@/lib/observability";
 
 // Runs every 15 minutes (.github/workflows/reminders.yml), sent as "Authorization: Bearer <CRON_SECRET>".
 // Releases expired van holds and sends 24h / 1h trip reminders (each at most once, via notification_log).
@@ -47,5 +49,11 @@ export async function GET(req: Request) {
     sent[w.event] = leads.length;
   }
 
-  return Response.json({ releasedHolds: released ?? 0, reminders: sent });
+  // From 6pm Accra time, each driver gets one text listing tomorrow's trips (deduped per day).
+  let driverDigests = 0;
+  if (new Date(now).getUTCHours() >= 18) {
+    driverDigests = await sendDriverDigests(new Date(now)).catch((e) => (reportError("cron.driver-digest", e), 0));
+  }
+
+  return Response.json({ releasedHolds: released ?? 0, reminders: sent, driverDigests });
 }

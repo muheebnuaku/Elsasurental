@@ -245,3 +245,7 @@ Important choices and why. Newest at the bottom of each section.
 - **Customers page** with search and admin access; can't change your own role or remove the last admin.
 - **Admin assistant** (`/admin/assistant`, OpenAI via `lib/ai/provider.ts`): read-only tools that query
   through the admin's own session (RLS), so it can answer and draft messages but never change data.
+- **Drivers get texts too** (`lib/notifications/driver.ts`, SMS): new trip (route, time, passengers, plate,
+  customer name and number — never prices), "no longer assigned to you" when reassigned or removed, "cancelled,
+  you don't need to go", and an evening digest of tomorrow's trips from 18:00 Accra (cron, once per driver per day).
+  The customer still gets their own "your driver is…" message. All logged in `notification_log`.

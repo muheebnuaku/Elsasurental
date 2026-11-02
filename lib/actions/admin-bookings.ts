@@ -10,6 +10,7 @@ import { cancelBooking } from "@/lib/booking/cancel";
 import { createBookingFromQuote, groupMoney, startPayment } from "@/lib/booking/service";
 import { afterPaymentRecorded } from "@/lib/booking/events";
 import { notifySafe, type NotifyEvent } from "@/lib/notifications";
+import { notifyDriver } from "@/lib/notifications/driver";
 import { normalizeGhanaPhone } from "@/lib/phone";
 
 export type AdminResult = { ok: boolean; message: string; ref?: string; url?: string; id?: string };
@@ -53,11 +54,18 @@ export async function assignBooking(_prev: AdminResult | null, formData: FormDat
     if (error.code === "23P01") return fail("That van or driver is already booked at this time.");
     return fail("Couldn't save. Please try again.");
   }
-  if (driverId && driverId !== booking.driver_id) {
-    after(() => notifySafe("driver_assigned", booking.id, { suffix: driverId }));
+  const previous = booking.driver_id;
+  if (driverId && driverId !== previous) {
+    after(async () => {
+      await notifySafe("driver_assigned", booking.id, { suffix: driverId }); // customer: who their driver is
+      await notifyDriver("trip_assigned", booking.id, driverId); // driver: the trip details
+      if (previous) await notifyDriver("trip_removed", booking.id, previous);
+    });
+  } else if (!driverId && previous) {
+    after(() => notifyDriver("trip_removed", booking.id, previous));
   }
   refresh(ref);
-  return { ok: true, message: driverId ? "Assigned. The customer has been notified." : "Saved." };
+  return { ok: true, message: driverId && driverId !== previous ? "Assigned. The customer and the driver have been notified." : "Saved." };
 }
 
 /** Calendar drag & drop: move a booking to another van (the database refuses clashes). */

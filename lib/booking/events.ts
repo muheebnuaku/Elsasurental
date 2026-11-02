@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifySafe } from "@/lib/notifications";
+import { notifyDriversOfCancellation } from "@/lib/notifications/driver";
 import { trackServer } from "@/lib/analytics/server";
 import { reportError } from "@/lib/observability";
 
@@ -29,6 +30,7 @@ export function afterPaymentRecorded(reference: string) {
 export function afterBookingCancelled(bookingId: string, refund: number) {
   after(async () => {
     await notifySafe("booking_cancelled", bookingId, { amount: refund });
+    await notifyDriversOfCancellation(bookingId);
     const { data: b } = await createAdminClient().from("bookings").select("ref_code, customer_id, trip_type").eq("id", bookingId).maybeSingle();
     if (b) {
       await trackServer("booking_cancelled", b.customer_id ?? `booking:${b.ref_code}`, { ref: b.ref_code, refund, trip_type: b.trip_type })
