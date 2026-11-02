@@ -28,7 +28,8 @@ export async function sendSms(to: string, message: string): Promise<SmsResult> {
 
     const res = await fetch("https://sms.arkesel.com/api/v2/sms/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "api-key": process.env.ARKESEL_API_KEY ?? "" },
+      // Trimmed: keys pasted into Vercel often carry a stray space or line break, which Arkesel rejects (401).
+      headers: { "Content-Type": "application/json", "api-key": (process.env.ARKESEL_API_KEY ?? "").trim().replace(/^"|"$/g, "") },
       body: JSON.stringify({ sender, message, recipients: [msisdn] }),
       signal: AbortSignal.timeout(10_000),
     });
