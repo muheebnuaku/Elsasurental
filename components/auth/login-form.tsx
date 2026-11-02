@@ -14,7 +14,7 @@ import { identify } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
 
 type Step = "phone" | "code" | "name";
-const RESEND_SECONDS = 30;
+const RESEND_SECONDS = 60; // SMS can be slow, and each resend cancels the previous code
 
 /** Google sign-in shows only once it's switched on in Supabase (Authentication → Providers → Google). */
 function useGoogleEnabled() {
