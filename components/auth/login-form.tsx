@@ -67,7 +67,7 @@ function PhoneField({ id, value, onChange, invalid }: { id: string; value: strin
     <div className="space-y-1.5">
       <Label htmlFor={id}>Mobile number</Label>
       <div className="flex h-12 items-center overflow-hidden rounded-xl border border-input bg-background focus-within:border-brand-orange focus-within:ring-3 focus-within:ring-brand-orange/25">
-        <span className="flex h-full items-center gap-2 border-r bg-muted px-3 text-sm font-medium">
+        <span className="flex h-full items-center gap-2 border-r bg-muted px-3 text-base font-medium">
           <GhanaFlag /> +233
         </span>
         <input
@@ -328,7 +328,7 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
           {mode === "register" && (
             <div className="space-y-1.5">
               <Label htmlFor="auth-name">Full name</Label>
-              <Input id="auth-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 rounded-xl text-base" />
+              <Input id="auth-name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 rounded-xl px-3 text-base md:text-base" />
             </div>
           )}
           <PhoneField id="auth-phone" value={phoneInput} onChange={setPhoneInput} invalid={Boolean(error)} />
@@ -449,7 +449,7 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="login-name">Full name</Label>
-            <Input id="login-name" autoComplete="name" autoFocus value={name} onChange={(e) => setName(e.target.value)} className="h-12 rounded-xl text-base" />
+            <Input id="login-name" autoComplete="name" autoFocus value={name} onChange={(e) => setName(e.target.value)} className="h-12 rounded-xl px-3 text-base md:text-base" />
           </div>
           {errorLine}
           <Button type="submit" variant="accent" size="xl" className="w-full" disabled={busy}>
