@@ -54,16 +54,17 @@ export function Checkout({ quoteToken, total, deposit, depositPct, name, phone, 
     // Signed in with Google and no number yet: confirm this one and add it to the same account.
     if (data.user && !signedPhone) {
       const { error } = await supabase.auth.updateUser({ phone: e164 });
-      if (!error) return askForCode("phone_change");
-      if (error.code !== "phone_exists") return sendFailed(error.status);
+      if (error?.status === 429) return sendFailed(429);
+      // Other errors: the SMS provider is often just slow and the text still arrives, so ask for it.
+      if (error?.code !== "phone_exists") return askForCode("phone_change");
       // The number already has its own account: continue as that account (below).
     }
 
     // Verify this number first (also creates the customer's account).
     if (data.user) await supabase.auth.signOut();
     const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
-    if (error) return sendFailed(error.status);
-    askForCode("sms");
+    if (error?.status === 429) return sendFailed(429);
+    askForCode("sms"); // also on other errors: a slow SMS often still arrives
   }
 
   function askForCode(type: "sms" | "phone_change") {

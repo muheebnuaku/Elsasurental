@@ -70,6 +70,7 @@ export function LoginForm() {
     params.get("error") === "google" ? "Google sign-in didn't finish. Please try again, or use your phone number." : null,
   );
   const [resendIn, setResendIn] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
   const [destination, setDestination] = useState("/account");
   const codeRef = useRef<HTMLInputElement>(null);
 
@@ -87,11 +88,10 @@ export function LoginForm() {
     setError(null);
     const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
     setBusy(false);
-    if (error) {
-      return setError(
-        error.status === 429 ? "Too many attempts. Please wait a minute and try again." : "We couldn't send a code to that number. Please try again.",
-      );
-    }
+    if (error?.status === 429) return setError("Too many attempts. Please wait a minute and try again.");
+    // Any other error: the SMS provider is often just slow and the text still arrives, so show the
+    // code boxes anyway rather than leaving the customer with a code and nowhere to type it.
+    setNotice(error ? "This is taking a little longer than usual. If no code arrives within a minute, tap Resend code." : null);
     setPhone(e164);
     setCode("");
     setStep("code");
@@ -201,6 +201,7 @@ export function LoginForm() {
             <h2 className="text-2xl font-semibold tracking-tight">Enter your code</h2>
             <p className="mt-1 text-sm text-muted-foreground">We texted a 6-digit code to <span className="font-medium text-foreground">{formatGhanaPhone(phone)}</span></p>
           </div>
+          {notice && <p className="rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">{notice}</p>}
           {/* One real input (keeps SMS autofill and paste working) drawn as six boxes. */}
           <div className="relative">
             <input

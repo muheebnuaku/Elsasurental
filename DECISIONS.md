@@ -214,3 +214,8 @@ Important choices and why. Newest at the bottom of each section.
   in the menu uses the browser prompt on Android/desktop Chrome and shows the two Share steps on iPhone.
 - **Landing animation runs on one clock** (`useAnimationFrame` → `progress` → `useTransform`). Separate repeating
   animations started at different moments and drifted apart; in production some never started.
+- **Slow SMS never strands the customer.** Arkesel can take far longer than the ~5 s Supabase gives the Send SMS
+  hook, so the hook answers at once and delivers in `after()` with retries. If Supabase still reports an error
+  (anything but 429), sign-in and checkout show the code boxes anyway with a gentle "taking longer" note, because
+  the text usually arrives.
+- **Functions run in `dub1`** (vercel.json), next to the Supabase project (eu-west-1), instead of Vercel's US default.
