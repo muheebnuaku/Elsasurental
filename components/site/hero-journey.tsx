@@ -1,13 +1,24 @@
 "use client";
 
-import { motion, useReducedMotion, type Transition } from "framer-motion";
+import {
+  cubicBezier,
+  easeInOut,
+  easeOut,
+  motion,
+  useAnimationFrame,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { Flag, MapPin, Smartphone, Users } from "lucide-react";
 import { VanBody, vanLength } from "@/components/fleet/van-art";
 import { cn } from "@/lib/utils";
 
 // A rental in one loop: the van arrives at the pick-up pin, the group boards, it drives to the
 // destination and STOPS at the flag, the group steps out, then the scene resets.
-// Pure SVG + Framer Motion; a still frame when the visitor prefers reduced motion.
+// Every part reads one clock (`progress`, 0 → 1 per loop), so the van, people, bubbles and
+// captions can't drift apart. Pure SVG + Framer Motion; a still frame for reduced motion.
 
 const DURATION = 14; // seconds per loop
 const SEATS = 14;
@@ -35,6 +46,8 @@ const T = {
   alightEnd: 0.8,
   fade: 0.92,
 };
+// Server render, reduced motion and the first frame: van parked at the pick-up, group waiting.
+const STILL = 0.19;
 
 const people = [
   { dx: 18, color: "var(--brand-orange)", h: 1 },
@@ -51,12 +64,22 @@ const steps = [
   { icon: Flag, text: "Arrived, all of you", from: T.reach, to: 1 },
 ] as const;
 
-const loop = (times: number[], ease: Transition["ease"] = "easeInOut"): Transition => ({
-  duration: DURATION,
-  repeat: Infinity,
-  times,
-  ease,
-});
+type Ease = (v: number) => number;
+const linear: Ease = (v) => v;
+
+// Van: ease into the stop, wait, pull away gently, brake at the flag, wait, fade.
+const VAN_TIMES = [0, T.arrive, T.depart, T.reach, T.fade, 1];
+const VAN_EASE: Ease[] = [easeOut, linear, cubicBezier(0.45, 0, 0.25, 1), linear, linear];
+// Wheels turn only while the van moves, in proportion to the distance covered.
+const turns = (dx: number) => (dx / (2 * Math.PI * 23 * SCALE)) * 360;
+const LEG1 = turns(AT_PICKUP - START_X);
+const LEG2 = turns(AT_DEST - AT_PICKUP);
+
+/** [time, value] keyframes on the shared clock. A pair is dropped when the next one has the same time. */
+function useTrack<V extends number | string>(progress: MotionValue<number>, pairs: [number, V][], ease: Ease = easeInOut) {
+  const kept = pairs.filter(([t], i) => i === pairs.length - 1 || pairs[i + 1][0] !== t);
+  return useTransform(progress, kept.map(([t]) => t), kept.map(([, v]) => v), { ease });
+}
 
 function Person({ color, h }: { color: string; h: number }) {
   return (
@@ -71,16 +94,14 @@ function Person({ color, h }: { color: string; h: number }) {
 
 export function HeroJourney({ className }: { className?: string }) {
   const still = useReducedMotion() ?? false;
+  const progress = useMotionValue(STILL);
+  useAnimationFrame((ms) => {
+    progress.set(still ? STILL : (STILL + ms / (DURATION * 1000)) % 1);
+  });
 
-  // Van: ease into the stop, wait, pull away gently, brake at the flag, wait, fade.
-  const vanX = [START_X, AT_PICKUP, AT_PICKUP, AT_DEST, AT_DEST, AT_DEST];
-  const vanTimes = [0, T.arrive, T.depart, T.reach, T.fade, 1];
-  const vanEase: Transition["ease"] = ["easeOut", "linear", [0.45, 0, 0.25, 1], "linear", "linear"];
-  // Wheels turn only while the van moves, in proportion to the distance covered.
-  const turns = (dx: number) => (dx / (2 * Math.PI * 23 * SCALE)) * 360;
-  const leg1 = turns(AT_PICKUP - START_X);
-  const leg2 = turns(AT_DEST - AT_PICKUP);
-  const wheelTurns = [0, leg1, leg1, leg1 + leg2, leg1 + leg2, leg1 + leg2];
+  const vanX = useTransform(progress, VAN_TIMES, [START_X, AT_PICKUP, AT_PICKUP, AT_DEST, AT_DEST, AT_DEST], { ease: VAN_EASE });
+  const vanOpacity = useTransform(progress, VAN_TIMES, [0, 1, 1, 1, 1, 0], { ease: VAN_EASE });
+  const wheelRotate = useTransform(progress, VAN_TIMES, [0, LEG1, LEG1, LEG1 + LEG2, LEG1 + LEG2, LEG1 + LEG2], { ease: VAN_EASE });
 
   return (
     <div className={cn("relative select-none", className)} aria-hidden>
@@ -153,11 +174,7 @@ export function HeroJourney({ className }: { className?: string }) {
         </g>
 
         {/* the van */}
-        <motion.g
-          initial={false}
-          animate={still ? { x: AT_PICKUP, opacity: 1 } : { x: vanX, opacity: [0, 1, 1, 1, 1, 0] }}
-          transition={{ ...loop(vanTimes), ease: vanEase }}
-        >
+        <motion.g style={{ x: vanX, opacity: vanOpacity }}>
           {/* soft ground shadow */}
           <ellipse cx={VAN_W / 2} cy={ROAD_Y + 3} rx={VAN_W / 2 - 4} ry="4" fill="#000" opacity="0.5" />
           {/* headlight beam */}
@@ -171,12 +188,7 @@ export function HeroJourney({ className }: { className?: string }) {
               <VanBody
                 seats={SEATS}
                 wrapWheel={(cx, wheel) => (
-                  <motion.g
-                    key={cx}
-                    style={{ transformBox: "fill-box", transformOrigin: "center" }}
-                    animate={still ? undefined : { rotate: wheelTurns }}
-                    transition={{ ...loop(vanTimes), ease: vanEase }}
-                  >
+                  <motion.g key={cx} style={{ rotate: wheelRotate, transformBox: "fill-box", transformOrigin: "center" }}>
                     {wheel}
                   </motion.g>
                 )}
@@ -186,88 +198,32 @@ export function HeroJourney({ className }: { className?: string }) {
         </motion.g>
 
         {/* group waiting on the near curb, stepping up into the van one by one */}
-        {people.map((p, i) => {
-          const s = T.boardStart + i * 0.014;
-          const e = s + 0.035;
-          return (
-            <motion.g
-              key={`a${i}`}
-              initial={false}
-              animate={
-                still
-                  ? { x: 0, y: 0, opacity: 1 }
-                  : { x: [0, 0, 0, -p.dx, -p.dx, 0], y: [0, 0, 0, -14, -14, 0], opacity: [1, 1, 1, 0, 0, 1] }
-              }
-              transition={loop([0, T.arrive, s, e, 0.97, 1], "easeInOut")}
-            >
-              <g transform={`translate(${PICKUP_X + p.dx} ${CURB_Y})`}>
-                <Person color={p.color} h={p.h} />
-              </g>
-            </motion.g>
-          );
-        })}
+        {people.map((p, i) => (
+          <Boarding key={`a${i}`} progress={progress} index={i} {...p} />
+        ))}
 
         {/* group stepping out at the destination */}
-        {people.map((p, i) => {
-          const s = T.alightStart + i * 0.02;
-          const e = s + 0.05;
-          const doorX = AT_DEST + VAN_W * DOOR;
-          return (
-            <motion.g
-              key={`b${i}`}
-              initial={false}
-              animate={
-                still
-                  ? { opacity: 0 }
-                  : { x: [0, 0, 0, 14 + i * 12, 14 + i * 12, 14 + i * 12], y: [-14, -14, -14, 0, 0, 0], opacity: [0, 0, 1, 1, 1, 0] }
-              }
-              transition={loop([0, s, s + 0.01, e, T.fade, 0.97], "easeOut")}
-            >
-              <g transform={`translate(${doorX} ${CURB_Y})`}>
-                <Person color={p.color} h={p.h * 0.95} />
-              </g>
-            </motion.g>
-          );
-        })}
+        {people.map((p, i) => (
+          <Alighting key={`b${i}`} progress={progress} index={i} {...p} />
+        ))}
 
         {/* speech-bubble moments */}
-        <Bubble x={AT_PICKUP + VAN_W * 0.82} y={VAN_Y - 30} text="+5 aboard" times={[0, T.boardEnd - 0.03, T.boardEnd, T.depart, T.depart + 0.03, 1]} still={still} />
-        <Bubble x={AT_DEST + VAN_W * 0.5} y={VAN_Y - 32} text="Arrived ✓" times={[0, T.alightEnd - 0.04, T.alightEnd - 0.01, T.fade - 0.02, T.fade, 1]} still={still} />
+        <Bubble progress={progress} x={AT_PICKUP + VAN_W * 0.82} y={VAN_Y - 30} text="+5 aboard" times={[0, T.boardEnd - 0.03, T.boardEnd, T.depart, T.depart + 0.03, 1]} />
+        <Bubble progress={progress} x={AT_DEST + VAN_W * 0.5} y={VAN_Y - 32} text="Arrived ✓" times={[0, T.alightEnd - 0.04, T.alightEnd - 0.01, T.fade - 0.02, T.fade, 1]} />
 
         <rect x="-20" y="0" width="680" height="256" fill="url(#hj-edges)" pointerEvents="none" />
       </svg>
 
       {/* captions, one per step */}
       <div className="relative h-8">
-        {steps.map(({ icon: Icon, text, from, to }, i) => (
-          <motion.p
-            key={text}
-            className="absolute inset-x-0 flex items-center justify-center gap-2 text-sm font-medium text-white/85 sm:text-[15px]"
-            initial={false}
-            animate={
-              still
-                ? { opacity: i === 1 ? 1 : 0 }
-                : { opacity: from === 0 ? [1, 1, 1, 1, 0, 0] : [0, 0, 1, 1, 0, 0], y: [4, 4, 0, 0, -4, -4] }
-            }
-            transition={still ? undefined : loop([0, from, from + 0.03, to - 0.03, to, 1], "easeOut")}
-          >
-            <span className="grid size-6 place-items-center rounded-full bg-brand-orange text-brand-ink">
-              <Icon className="size-3.5" />
-            </span>
-            {text}
-          </motion.p>
+        {steps.map((step, i) => (
+          <Caption key={step.text} progress={progress} step={step} fixed={still ? (i === 1 ? 1 : 0) : null} />
         ))}
       </div>
       <div className="mt-1.5 flex justify-center gap-1.5">
         {steps.map(({ text, from, to }) => (
           <span key={text} className="relative h-1 w-8 overflow-hidden rounded-full bg-white/15 sm:w-10">
-            {!still && (
-              <motion.span
-                className="absolute inset-y-0 left-0 rounded-full bg-brand-orange"
-                animate={{ width: ["0%", "0%", "100%", "100%"] }}
-                transition={loop([0, from, to, 1], "linear")}
-              />
-            )}
+            {!still && <StepBar progress={progress} from={from} to={to} />}
           </span>
         ))}
       </div>
@@ -275,13 +231,72 @@ export function HeroJourney({ className }: { className?: string }) {
   );
 }
 
-function Bubble({ x, y, text, times, still }: { x: number; y: number; text: string; times: number[]; still: boolean }) {
+type PersonProps = { progress: MotionValue<number>; index: number; dx: number; color: string; h: number };
+
+function Boarding({ progress, index, dx, color, h }: PersonProps) {
+  const s = T.boardStart + index * 0.014;
+  const e = s + 0.035;
+  const x = useTrack(progress, [[0, 0], [s, 0], [e, -dx], [0.97, -dx], [1, 0]]);
+  const y = useTrack(progress, [[0, 0], [s, 0], [e, -14], [0.97, -14], [1, 0]]);
+  const opacity = useTrack(progress, [[0, 1], [s, 1], [e, 0], [0.97, 0], [1, 1]]);
   return (
-    <motion.g
-      initial={false}
-      animate={still ? { opacity: 0 } : { opacity: [0, 0, 1, 1, 0, 0], y: [6, 6, 0, 0, -4, -4] }}
-      transition={still ? undefined : loop(times, "easeOut")}
+    <motion.g style={{ x, y, opacity }}>
+      <g transform={`translate(${PICKUP_X + dx} ${CURB_Y})`}>
+        <Person color={color} h={h} />
+      </g>
+    </motion.g>
+  );
+}
+
+function Alighting({ progress, index, color, h }: PersonProps) {
+  const s = T.alightStart + index * 0.02;
+  const e = s + 0.05;
+  const walk = 14 + index * 12;
+  const x = useTrack(progress, [[0, 0], [s, 0], [e, walk], [1, walk]], easeOut);
+  const y = useTrack(progress, [[0, -14], [s, -14], [e, 0], [1, 0]], easeOut);
+  const opacity = useTrack(progress, [[0, 0], [s, 0], [s + 0.01, 1], [T.fade, 1], [0.97, 0], [1, 0]], easeOut);
+  return (
+    <motion.g style={{ x, y, opacity }}>
+      <g transform={`translate(${AT_DEST + VAN_W * DOOR} ${CURB_Y})`}>
+        <Person color={color} h={h * 0.95} />
+      </g>
+    </motion.g>
+  );
+}
+
+function Caption({ progress, step, fixed }: { progress: MotionValue<number>; step: (typeof steps)[number]; fixed: number | null }) {
+  const { icon: Icon, text, from, to } = step;
+  const opacity = useTrack(
+    progress,
+    from === 0
+      ? [[0, 1], [to - 0.03, 1], [to, 0], [1, 0]]
+      : [[0, 0], [from, 0], [from + 0.03, 1], [to - 0.03, 1], [to, 0], [1, 0]],
+    easeOut,
+  );
+  const y = useTrack(progress, [[0, from === 0 ? 0 : 4], [from, 4], [from + 0.03, 0], [to - 0.03, 0], [to, -4], [1, -4]], easeOut);
+  return (
+    <motion.p
+      className="absolute inset-x-0 flex items-center justify-center gap-2 text-sm font-medium text-white/85 sm:text-[15px]"
+      style={fixed === null ? { opacity, y } : { opacity: fixed }}
     >
+      <span className="grid size-6 place-items-center rounded-full bg-brand-orange text-brand-ink">
+        <Icon className="size-3.5" />
+      </span>
+      {text}
+    </motion.p>
+  );
+}
+
+function StepBar({ progress, from, to }: { progress: MotionValue<number>; from: number; to: number }) {
+  const width = useTrack(progress, [[0, "0%"], [from, "0%"], [to, "100%"], [1, "100%"]], linear);
+  return <motion.span className="absolute inset-y-0 left-0 rounded-full bg-brand-orange" style={{ width }} />;
+}
+
+function Bubble({ progress, x, y, text, times }: { progress: MotionValue<number>; x: number; y: number; text: string; times: number[] }) {
+  const opacity = useTransform(progress, times, [0, 0, 1, 1, 0, 0], { ease: easeOut });
+  const dy = useTransform(progress, times, [6, 6, 0, 0, -4, -4], { ease: easeOut });
+  return (
+    <motion.g style={{ opacity, y: dy }}>
       <rect x={x - 38} y={y} width="76" height="23" rx="11.5" fill="var(--brand-orange)" />
       <path d={`M${x - 5},${y + 22} l5,6 l5,-6 Z`} fill="var(--brand-orange)" />
       <text x={x} y={y + 15.5} textAnchor="middle" fontSize="11.5" fontWeight="700" fill="var(--brand-ink)">{text}</text>
