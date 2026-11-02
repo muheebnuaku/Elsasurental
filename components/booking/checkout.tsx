@@ -11,6 +11,7 @@ import { formatMoney } from "@/lib/format";
 import { formatGhanaPhone, normalizeGhanaPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 import { identify, track } from "@/lib/analytics/client";
+import { codeCopy } from "@/lib/login-codes";
 
 type Props = {
   quoteToken: string;
@@ -153,7 +154,7 @@ export function Checkout({ quoteToken, total, deposit, depositPct, name, phone, 
         <DialogContent className="max-w-sm">
           <DialogTitle>Confirm your number</DialogTitle>
           <DialogDescription>
-            We sent a 6-digit code to {otpFor ? formatGhanaPhone(otpFor) : ""}. {otpType === "phone_change" ? "We'll add it to your account for trip updates." : "This keeps your booking safe and creates your account."}
+            {codeCopy.sentTo} {otpFor ? formatGhanaPhone(otpFor) : ""}. {otpType === "phone_change" ? "We'll add it to your account for trip updates." : "This keeps your booking safe and creates your account."}
           </DialogDescription>
           <Input
             ref={codeRef}

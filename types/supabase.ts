@@ -365,6 +365,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"otp_deliveries": {
+                  Row: {
+                    "channel": string,"phone": string,"sent_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel": string,"phone": string,"sent_at"?: string
+                  }
+                  Update: {
+                    "channel"?: string,"phone"?: string,"sent_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"payments": {
                   Row: {
                     "amount": number,"booking_id": string,"created_at": string,"currency": string,"id": string,"kind": Database["public"]['Enums']["payment_kind"],"method": Database["public"]['Enums']["payment_method"] | null,"paid_at": string | null,"provider": string,"raw": Json | null,"reference": string,"refund_of": string | null,"status": Database["public"]['Enums']["payment_status"],"updated_at": string

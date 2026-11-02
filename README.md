@@ -126,6 +126,16 @@ Search the code for `TODO(confirm)`. Current defaults:
 4. Keep **Confirm phone** switched on (Phone provider settings). Google accounts add their number with an SMS
    code; without confirmations the number would be saved unverified.
 
+## Login codes on WhatsApp
+
+Codes go by WhatsApp first; "No WhatsApp? Text me the code" (a resend) goes by SMS.
+
+1. Meta Business Suite → WhatsApp Manager → **Message templates** → Create → category **Authentication**.
+   Name `elsasu_login_code`, language English, "Copy code" button. Meta writes the wording; approval is usually quick.
+2. Vercel: `WHATSAPP_ACCESS_TOKEN` (permanent System User token), `WHATSAPP_PHONE_NUMBER_ID`,
+   `WHATSAPP_OTP_TEMPLATE=elsasu_login_code`, `NEXT_PUBLIC_WHATSAPP_CODES=on`, then redeploy.
+3. The Supabase Send SMS hook stays the same (it calls this site, which picks the channel).
+
 ## Google sign-in
 
 1. Google Cloud Console → APIs & Services → OAuth consent screen: app name "Elsasu Rentals", your support email,

@@ -12,6 +12,7 @@ import { formatGhanaPhone, normalizeGhanaPhone } from "@/lib/phone";
 import { roleHome, safeNext } from "@/lib/auth";
 import { identify } from "@/lib/analytics/client";
 import { cn } from "@/lib/utils";
+import { codeCopy } from "@/lib/login-codes";
 
 // Phone + password accounts. A text code is needed only to confirm a new number (once, at
 // registration) or to reset a forgotten password. Signing in is instant.
@@ -242,7 +243,7 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
     if (error || !data.user) {
       setBusy(false);
       setCode("");
-      return setError("That code isn't right or has expired. Use the newest text we sent, or tap Resend code.");
+      return setError(codeCopy.wrong);
     }
     if (codeFor === "reset") {
       setBusy(false);
@@ -350,7 +351,7 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
           <Button type="submit" variant="accent" size="xl" className="w-full" disabled={busy}>
             {busy ? <Loader2 className="animate-spin" /> : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
-          {mode === "register" && <p className="text-center text-xs text-muted-foreground">We&apos;ll text you one code to confirm your number.</p>}
+          {mode === "register" && <p className="text-center text-xs text-muted-foreground">{codeCopy.registerLine}</p>}
         </form>
       )}
 
@@ -359,12 +360,12 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
           {back("Back to sign in", "form")}
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">Reset your password</h2>
-            <p className="mt-1 text-sm text-muted-foreground">We&apos;ll text you a code, then you choose a new password. First time with a password? This sets one up.</p>
+            <p className="mt-1 text-sm text-muted-foreground">{codeCopy.resetLine}</p>
           </div>
           <PhoneField id="reset-phone" value={phoneInput} onChange={setPhoneInput} invalid={Boolean(error)} />
           {errorLine}
           <Button type="submit" variant="accent" size="xl" className="w-full" disabled={busy}>
-            {busy ? <Loader2 className="animate-spin" /> : "Text me a code"}
+            {busy ? <Loader2 className="animate-spin" /> : codeCopy.sendButton}
           </Button>
         </form>
       )}
@@ -374,7 +375,7 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
           {back("Change number", codeFor === "reset" ? "reset" : "form")}
           <div>
             <h2 className="text-2xl font-semibold tracking-tight">{codeFor === "reset" ? "Enter your code" : "Confirm your number"}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">We texted a 6-digit code to <span className="font-medium text-foreground">{formatGhanaPhone(phone)}</span></p>
+            <p className="mt-1 text-sm text-muted-foreground">{codeCopy.sentTo} <span className="font-medium text-foreground">{formatGhanaPhone(phone)}</span></p>
           </div>
           {notice && <p className="rounded-xl bg-muted px-3 py-2 text-sm text-muted-foreground">{notice}</p>}
           {/* One real input (keeps SMS autofill and paste working) drawn as six boxes. */}
@@ -418,9 +419,9 @@ export function LoginForm({ mode }: { mode: AuthMode }) {
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             {resendIn > 0 ? (
-              <>Didn&apos;t get it? You can resend in {resendIn}s</>
+              <>Didn&apos;t get it? You can get a new code in {resendIn}s</>
             ) : (
-              <button type="button" onClick={resend} disabled={busy} className="font-semibold text-foreground hover:underline">Resend code</button>
+              <button type="button" onClick={resend} disabled={busy} className="font-semibold text-foreground hover:underline">{codeCopy.resend}</button>
             )}
           </p>
         </form>

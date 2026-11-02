@@ -37,6 +37,41 @@ export async function sendWhatsAppTemplate(to: string, template: string, params:
   }
 }
 
+/**
+ * Login code over WhatsApp, using an approved AUTHENTICATION template (Meta's fixed wording
+ * "<code> is your verification code." with a "Copy code" button). The code fills both the body
+ * and the button. Template name: WHATSAPP_OTP_TEMPLATE (default "elsasu_login_code").
+ */
+export async function sendWhatsAppCode(to: string, code: string): Promise<SendResult> {
+  if (!whatsappConfigured()) return { status: "skipped" };
+  try {
+    const res = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: to.replace(/^\+/, ""),
+        type: "template",
+        template: {
+          name: process.env.WHATSAPP_OTP_TEMPLATE || "elsasu_login_code",
+          language: { code: process.env.WHATSAPP_TEMPLATE_LANG ?? "en" },
+          components: [
+            { type: "body", parameters: [{ type: "text", text: code }] },
+            { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: code }] },
+          ],
+        },
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const data = (await res.json().catch(() => ({}))) as { messages?: { id: string }[]; error?: { message?: string } };
+    return res.ok && data.messages?.[0]
+      ? { status: "sent", providerId: data.messages[0].id }
+      : { status: "failed", error: data.error?.message ?? `HTTP ${res.status}` };
+  } catch (e) {
+    return { status: "failed", error: e instanceof Error ? e.message : "WhatsApp request failed" };
+  }
+}
+
 export async function sendSmsMessage(to: string, text: string): Promise<SendResult> {
   if (!smsConfigured()) return { status: "skipped" };
   const r = await sendSms(to, text);

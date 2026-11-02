@@ -225,3 +225,7 @@ Important choices and why. Newest at the bottom of each section.
   older code-only and checkout-created accounts get a password (or Account → Password). Google stays.
 - **Sessions last 30 days without a visit** (`sessionCookieOptions`, used by the browser, server and proxy
   clients). The cookie is rewritten on every session refresh, so regular use keeps people signed in.
+- **Login codes go by WhatsApp first.** The Send SMS hook sends Supabase's code with an approved AUTHENTICATION
+  template (`sendWhatsAppCode`). Meta accepts messages to numbers that aren't on WhatsApp and fails later, so we
+  can't fall back instantly; instead a resend within 15 minutes goes by SMS (`otp_deliveries` remembers the last
+  channel). `NEXT_PUBLIC_WHATSAPP_CODES=on` switches the wording on screen.
