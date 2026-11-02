@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifySafe, type NotifyEvent } from "@/lib/notifications";
 
-// Runs every 15 minutes (vercel.json). Vercel sends "Authorization: Bearer <CRON_SECRET>".
+// Runs every 15 minutes (.github/workflows/reminders.yml), sent as "Authorization: Bearer <CRON_SECRET>".
 // Releases expired van holds and sends 24h / 1h trip reminders (each at most once, via notification_log).
 export const maxDuration = 60;
 

@@ -162,8 +162,9 @@ is logged in `notification_log` and never sent twice. Without keys (local dev) m
 
 - **SMS:** `SMS_PROVIDER`, its key and an approved `SMS_SENDER_ID` (same as login codes).
 - **Email:** `RESEND_API_KEY` and a verified sending domain in `EMAIL_FROM`.
-- **Reminders:** `vercel.json` runs `/api/cron/reminders` every 15 minutes (needs `CRON_SECRET`; every-15-minute crons
-  need a Vercel Pro plan — on Hobby use a daily schedule or Supabase `pg_cron`). Test locally:
+- **Reminders:** a GitHub Actions schedule (`.github/workflows/reminders.yml`) calls `/api/cron/reminders` every
+  15 minutes, so it works on Vercel Hobby. Add repo secrets `SITE_URL` and `CRON_SECRET` (same value as in Vercel).
+  Run it by hand from the repo's Actions tab → Trip reminders → Run workflow. Test locally:
   `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/reminders`
 
 ## Cancellations & refunds
@@ -208,9 +209,9 @@ don't drop them: Sentry via `/monitoring`, PostHog via `/ingest`.
 
 ## Go-live checklist
 
-1. Supabase project created; run migrations; set the Send SMS hook to `https://<domain>/api/auth/sms-hook`.
+1. Supabase project created; run migrations (`supabase db push --linked`); paste `supabase/production-catalog.sql` into the SQL Editor once (van types, prices, destinations, add-ons; no test data); set the Send SMS hook to `https://<domain>/api/auth/sms-hook`.
 2. Paystack **test** keys → run one real MoMo test payment; then live keys; webhook URL `https://<domain>/api/webhooks/paystack`.
 3. WhatsApp templates (`elsasu_<event>`) approved; SMS sender ID registered; Resend domain verified.
 4. Real prices, vans, photos, business phone/WhatsApp/email (search `TODO(confirm)`).
-5. Vercel env vars from `.env.example`; Vercel Pro (or similar) for the 15-minute cron.
+5. Vercel env vars from `.env.example`; GitHub repo secrets `SITE_URL` + `CRON_SECRET` for the 15-minute reminders.
 6. Sentry DSN + auth token, PostHog key.

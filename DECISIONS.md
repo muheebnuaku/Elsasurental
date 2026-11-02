@@ -152,6 +152,8 @@ Important choices and why. Newest at the bottom of each section.
   customer's payments, and goes through Paystack's refund API. Completed refund rows use status `refunded` so they're
   never mistaken for payments. A failed refund is recorded (status `failed`) for admin follow-up.
 - **Cron** (`/api/cron/reminders`, every 15 min) also releases expired van holds as a safety net.
+  It's triggered by GitHub Actions, not a Vercel cron: Vercel Hobby only allows daily crons, and GitHub's
+  free schedule does the job. Runs can start a few minutes late; the 2-hour / 1-hour reminder windows absorb that.
 - **E2E suite:** one retry allowed; failures seen were local Docker auth/gateway timeouts under load, not app logic.
 
 ## Admin (Step 11)
