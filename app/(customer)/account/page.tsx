@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { formatGhanaPhone } from "@/lib/phone";
 import { EmptyTrips, TripList } from "@/components/app/trip-list";
-import { DeleteAccount, ProfileForm } from "@/components/app/account-forms";
+import { DeleteAccount, PasswordForm, ProfileForm } from "@/components/app/account-forms";
 
 export const metadata: Metadata = { title: "My account", robots: { index: false } };
 
@@ -52,6 +52,11 @@ export default async function AccountPage() {
         <section className="rounded-2xl border bg-card p-4 sm:p-5">
           <h2 className="mb-3 font-semibold">Your details</h2>
           <ProfileForm fullName={user.fullName ?? ""} email={user.email ?? ""} phone={user.phone ? formatGhanaPhone(user.phone) : ""} />
+        </section>
+        <section className="rounded-2xl border bg-card p-4 sm:p-5">
+          <h2 className="font-semibold">Password</h2>
+          <p className="mt-1 mb-3 text-sm text-muted-foreground">Sign in with your phone number and password. No code needed.</p>
+          <PasswordForm />
         </section>
         <section className="rounded-2xl border bg-card p-4 sm:p-5">
           <h2 className="font-semibold">Privacy</h2>

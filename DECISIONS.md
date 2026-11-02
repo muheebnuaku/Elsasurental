@@ -219,3 +219,9 @@ Important choices and why. Newest at the bottom of each section.
   (anything but 429), sign-in and checkout show the code boxes anyway with a gentle "taking longer" note, because
   the text usually arrives.
 - **Functions run in `dub1`** (vercel.json), next to the Supabase project (eu-west-1), instead of Vercel's US default.
+- **Phone + password accounts** (owner's choice over SMS codes at every sign-in). `/register` = name, phone,
+  password → `signUp` → one code confirms the number. `/login` = `signInWithPassword`, no code. "Forgot
+  password?" = `signInWithOtp({ shouldCreateUser: false })` → code → `updateUser({ password })`, which is also how
+  older code-only and checkout-created accounts get a password (or Account → Password). Google stays.
+- **Sessions last 30 days without a visit** (`sessionCookieOptions`, used by the browser, server and proxy
+  clients). The cookie is rewritten on every session refresh, so regular use keeps people signed in.

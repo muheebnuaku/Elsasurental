@@ -52,7 +52,9 @@ Supabase Studio (database browser) runs at http://127.0.0.1:54323.
 
 ## Test accounts (local only)
 
-Phone OTP sign-in with these numbers always accepts code **123456**; no SMS is sent.
+Accounts are phone + password: `/register` confirms the number with one code, `/login` is phone + password,
+and "Forgot password?" sends a code to set a new one. These test numbers have no password yet: use
+**Forgot password?** with code **123456** (no SMS is sent) and choose one.
 
 | Phone | Role |
 |---|---|

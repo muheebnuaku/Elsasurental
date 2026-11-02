@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 // Runs before protected pages: refreshes the Supabase session cookie and sends signed-out
 // visitors to /login. This is only a fast first check — role checks happen in each area's
@@ -12,6 +13,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: sessionCookieOptions,
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(cookiesToSet) {

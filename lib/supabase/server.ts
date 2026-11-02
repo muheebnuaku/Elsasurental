@@ -2,6 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/supabase";
+import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 // Per-request client acting AS the signed-in user (RLS applies). Use in Server Components,
 // Server Actions and Route Handlers. Reads cookies, so call it inside <Suspense> in pages.
@@ -11,6 +12,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: sessionCookieOptions,
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll(cookiesToSet) {

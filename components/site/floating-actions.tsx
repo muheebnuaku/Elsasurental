@@ -58,6 +58,9 @@ export function FloatingActions() {
     return () => window.removeEventListener(CHAT_STATE_EVENT, on);
   }, []);
 
+  // Keep the sign-in and register forms clear on small screens.
+  if (pathname === "/login" || pathname === "/register") return null;
+
   return (
     <div
       ref={stack}
