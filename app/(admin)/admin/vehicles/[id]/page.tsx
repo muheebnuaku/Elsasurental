@@ -33,7 +33,7 @@ export default async function VehicleTypeAdminPage({ params }: PageProps<"/admin
   if (!type) notFound();
 
   const [{ data: types }, { data: vehicles }, { data: rules }, { data: dests }, { data: destPrices }] = await Promise.all([
-    supabase.from("vehicle_types").select("id, name").order("sort_order"),
+    supabase.from("vehicle_types").select("id, name, seats, category").order("sort_order"),
     supabase.from("vehicles").select("*").eq("type_id", id).order("name"),
     supabase.from("pricing_rules").select("*").eq("vehicle_type_id", id).eq("active", true),
     supabase.from("destinations").select("id, name, region").order("est_hours"),

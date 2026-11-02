@@ -1,6 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
+import { aiFillVehicleType } from "@/lib/actions/admin-ai";
+import { AiFillBox, setField } from "@/components/admin/ai-fill";
 import { ActionForm, SubmitButton, fieldCls } from "@/components/admin/ui";
 import { saveVehicleType } from "@/lib/actions/admin-catalog";
 
@@ -14,6 +17,27 @@ const label = "text-xs font-medium text-muted-foreground";
 /** Edit a vehicle type, or create one (its prices start as a copy of `copyOptions`' choice). */
 export function VehicleTypeForm({ type, copyOptions }: { type?: VehicleTypeRow; copyOptions?: { id: string; name: string }[] }) {
   const router = useRouter();
+  const fieldsRef = useRef<HTMLDivElement>(null);
+
+  async function fill(text: string) {
+    // An existing type: give the model its real details and only take the new description back,
+    // so typical figures never overwrite the real seats or bags.
+    const brief = type
+      ? `Vehicle type: ${type.name}, ${type.seats} seats, ${type.luggage_capacity} bags, ${type.category}. Current description: ${type.description ?? "none"}. Request: ${text}`
+      : text;
+    const r = await aiFillVehicleType(brief);
+    if (!r.ok) return r.message;
+    const root = fieldsRef.current;
+    if (!type) {
+      setField(root, "name", r.data.name);
+      setField(root, "category", r.data.category);
+      setField(root, "seats", r.data.seats);
+      setField(root, "luggage_capacity", r.data.luggageCapacity);
+    }
+    setField(root, "description", r.data.description);
+    return null;
+  }
+
   return (
     <ActionForm
       action={saveVehicleType}
@@ -23,7 +47,11 @@ export function VehicleTypeForm({ type, copyOptions }: { type?: VehicleTypeRow; 
       {(pending) => (
         <>
           <input type="hidden" name="id" value={type?.id ?? ""} />
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <AiFillBox
+            placeholder={type ? "Tell the AI what to change, e.g. write a warmer description for weddings and VIP airport pick-ups" : "Describe it, e.g. Toyota Land Cruiser V8 for VIP airport runs and long trips up north"}
+            onFill={fill}
+          />
+          <div ref={fieldsRef} className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <label className={`${label} col-span-2`}>Name on the website
               <input name="name" required defaultValue={type?.name} placeholder="e.g. Toyota Land Cruiser" className={`${fieldCls} mt-1`} />
             </label>

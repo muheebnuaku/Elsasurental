@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { Film, ImagePlus, Loader2, X } from "lucide-react";
 import { ActionForm, SubmitButton, fieldCls } from "@/components/admin/ui";
 import { saveDriver, saveVehicle } from "@/lib/actions/admin-catalog";
+import { aiFillVehicle, type VehicleFill } from "@/lib/actions/admin-ai";
+import { AiFillBox, setField } from "@/components/admin/ai-fill";
 import { createClient } from "@/lib/supabase/client";
 
-export type VanTypeOpt = { id: string; name: string };
+export type VanTypeOpt = { id: string; name: string; seats?: number; category?: string };
 export type VehicleRow = {
   id: string; type_id: string; name: string; plate: string; status: string; current_mileage: number;
   year: number | null; colour: string | null; features: string[]; photos: string[]; videos: string[];
@@ -42,6 +44,25 @@ export function VehicleForm({ vehicle, types, defaultTypeId, onSaved }: { vehicl
   const videoUp = useUploader("vehicle-videos");
   const photoInput = useRef<HTMLInputElement>(null);
   const videoInput = useRef<HTMLInputElement>(null);
+  const fieldsRef = useRef<HTMLDivElement>(null);
+
+  /** Put the model's answer into the form; the admin still checks and saves. */
+  function apply(r: Awaited<ReturnType<typeof aiFillVehicle>>) {
+    if (!r.ok) return r.message;
+    const d: VehicleFill = r.data;
+    const root = fieldsRef.current;
+    const filled = [
+      setField(root, "name", d.name),
+      setField(root, "plate", d.plate?.toUpperCase()),
+      setField(root, "type_id", d.typeId),
+      setField(root, "year", d.year),
+      setField(root, "colour", d.colour),
+      setField(root, "current_mileage", d.mileageKm),
+      setField(root, "features", d.features.length ? d.features.join(", ") : null),
+    ].filter(Boolean).length;
+    return filled ? null : "Nothing to fill from that. Try adding a bit more detail.";
+  }
+  const aiTypes = types.map((t) => ({ id: t.id, name: t.name, seats: t.seats ?? 0, category: t.category ?? "van" }));
 
   return (
     <ActionForm action={saveVehicle} onDone={(r) => r.ok && onSaved?.()} className="space-y-2.5">
@@ -50,7 +71,13 @@ export function VehicleForm({ vehicle, types, defaultTypeId, onSaved }: { vehicl
           <input type="hidden" name="id" value={vehicle?.id ?? ""} />
           <input type="hidden" name="photos" value={JSON.stringify(photos)} />
           <input type="hidden" name="videos" value={JSON.stringify(videos)} />
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <AiFillBox
+            placeholder="Describe the vehicle or paste its details, e.g. Black 2022 Toyota Highlander, GR 4521-22, 38,000 km, leather seats, sunroof"
+            onFill={async (text) => apply(await aiFillVehicle({ text, types: aiTypes }))}
+            onPhoto={async () => apply(await aiFillVehicle({ text: "", photoUrl: photos[0], types: aiTypes }))}
+            photoReady={photos.length > 0}
+          />
+          <div ref={fieldsRef} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <label className="text-xs font-medium text-muted-foreground">Name<input name="name" required defaultValue={vehicle?.name} className={`${fieldCls} mt-1`} /></label>
             <label className="text-xs font-medium text-muted-foreground">Plate<input name="plate" required defaultValue={vehicle?.plate} className={`${fieldCls} mt-1 uppercase`} /></label>
             <label className="text-xs font-medium text-muted-foreground">Vehicle type
